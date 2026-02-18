@@ -97,7 +97,7 @@ def predict_crop_yield(data: CropRequest):
 RISK_MODEL_PATH = os.path.join(
     BASE_DIR,
     "models",
-    "crop_risk_model",
+    "model_5_crop_risk_model",
     "models",
     "risk_model.pkl"
 )
