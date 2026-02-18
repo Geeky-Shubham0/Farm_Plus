@@ -92,7 +92,58 @@ def predict_crop_yield(data: CropRequest):
         "adjusted_yield": round(adjusted_yield, 2),
         "confidence": round(conf_value, 2)
     }
-# Crop Risk Detection Model
+
+# Model-2 Agro Impact Imports
+MODEL_2_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "model_2_agro_impact"
+)
+
+sys.path.append(MODEL_2_PATH)
+
+from backend.models.model_2_agro_impact.src.predict_impact import predict_agro_impact
+# -----------------------------
+# Model-2 Request Schema
+# -----------------------------
+class AgroImpactRequest(BaseModel):
+    N: float
+    P: float
+    K: float
+    temperature: float
+    humidity: float
+    ph: float
+    rainfall: float
+    soil_moisture: float
+    soil_type: int
+    sunlight_exposure: float
+    wind_speed: float
+    co2_concentration: float
+    organic_matter: float
+    irrigation_frequency: float
+    crop_density: float
+    pest_pressure: float
+    fertilizer_usage: float
+    growth_stage: int
+    urban_area_proximity: float
+    water_source_type: int
+    frost_risk: float
+    water_usage_efficiency: float
+
+# -----------------------------
+# Model-2 Endpoint
+# -----------------------------
+@app.post("/agro-impact")
+def agro_impact_endpoint(data: AgroImpactRequest):
+
+    input_data = data.dict()
+
+    result = predict_agro_impact(input_data)
+
+    return result
+
+
+# Model-5 Crop Risk Detection Model
 # Load Risk Model
 RISK_MODEL_PATH = os.path.join(
     BASE_DIR,
