@@ -92,3 +92,35 @@ def predict_crop_yield(data: CropRequest):
         "adjusted_yield": round(adjusted_yield, 2),
         "confidence": round(conf_value, 2)
     }
+# Crop Risk Detection Model
+# Load Risk Model
+RISK_MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "crop_risk_model",
+    "models",
+    "risk_model.pkl"
+)
+
+risk_model = joblib.load(RISK_MODEL_PATH)
+
+
+class RiskInput(BaseModel):
+    weather_volatility: float
+    price_fluctuation: float
+    crop_sensitivity: int
+
+
+@app.post("/predict-risk")
+def predict_risk(data: RiskInput):
+
+    prediction = risk_model.predict([[
+        data.weather_volatility,
+        data.price_fluctuation,
+        data.crop_sensitivity
+    ]])
+
+    return {
+        "risk_level": prediction[0]
+    }
+
