@@ -130,6 +130,32 @@ class AgroImpactRequest(BaseModel):
     frost_risk: float
     water_usage_efficiency: float
 
+from backend.models.model_2_agro_impact.src.feature_builder import build_feature_vector
+
+class AgroImpactLiteRequest(BaseModel):
+    latitude: float
+    longitude: float
+    crop: str
+    sowing_date: str
+    pest_level: str
+    soil_type: int | None = None
+
+@app.post("/agro-impact-lite")
+def agro_impact_lite_endpoint(data: AgroImpactLiteRequest):
+
+    features = build_feature_vector(
+        lat=data.latitude,
+        lon=data.longitude,
+        crop=data.crop,
+        sowing_date=data.sowing_date,
+        pest_level=data.pest_level
+    )
+
+    result = predict_agro_impact(features)
+
+    return result
+
+
 # -----------------------------
 # Model-2 Endpoint
 # -----------------------------
