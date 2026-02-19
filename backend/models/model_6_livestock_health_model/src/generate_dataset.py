@@ -33,4 +33,4 @@ df = pd.DataFrame(data, columns=[
 
 df.to_csv("../data/livestock_data.csv", index=False)
 
-print("Bulk dataset generated successfully 🚀")
+print("Bulk dataset generated successfully")

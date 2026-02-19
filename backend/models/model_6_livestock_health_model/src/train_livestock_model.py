@@ -23,4 +23,4 @@ print("Training Accuracy:", round(accuracy, 4))
 joblib.dump(model, "../models/livestock_health_model.pkl")
 joblib.dump(le, "../models/label_encoder.pkl")
 
-print("Livestock Health Model trained and saved successfully 🚀")
+print("Livestock Health Model trained and saved successfully ")
