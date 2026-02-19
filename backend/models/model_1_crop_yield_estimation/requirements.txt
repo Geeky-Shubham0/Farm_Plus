@@ -5,3 +5,5 @@ joblib
 fastapi
 pydantic
 uvicorn
+requests
+python-dotenv

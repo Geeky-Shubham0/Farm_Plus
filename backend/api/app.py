@@ -25,13 +25,27 @@ sys.path.append(MODEL_1_PATH)
 from backend.models.model_1_crop_yield_estimation.src.local_adjustment.apply_adjustment import apply_adjustment
 from backend.models.model_1_crop_yield_estimation.src.confidence.confidence_score import confidence_score
 
-MODEL_PATH = os.path.join(
+CROP_MODEL_PATH = os.path.join(
     MODEL_1_PATH,
     "models",
     "base_crop_yield_model.pkl"
 )
 
-crop_model = joblib.load(MODEL_PATH)
+crop_model = joblib.load(CROP_MODEL_PATH)
+
+# ================================
+# MODEL 2 - AGRO IMPACT MODEL
+# ================================
+MODEL_2_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "model_2_agro_impact"
+)
+
+sys.path.append(MODEL_2_PATH)
+
+from backend.models.model_2_agro_impact.src.predict_impact import predict_agro_impact
+from backend.models.model_2_agro_impact.src.feature_builder import build_feature_vector
 
 # ================================
 # MODEL 5 - CROP RISK MODEL
@@ -77,10 +91,9 @@ app = FastAPI(
 )
 
 # ================================
-# REQUEST & RESPONSE SCHEMAS
+# REQUEST SCHEMAS
 # ================================
 
-# Crop Yield Request
 class CropRequest(BaseModel):
     Crop: str
     Season: str
@@ -101,14 +114,45 @@ class CropResponse(BaseModel):
     confidence: float
 
 
-# Crop Risk Request
+class AgroImpactRequest(BaseModel):
+    N: float
+    P: float
+    K: float
+    temperature: float
+    humidity: float
+    ph: float
+    rainfall: float
+    soil_moisture: float
+    soil_type: int
+    sunlight_exposure: float
+    wind_speed: float
+    co2_concentration: float
+    organic_matter: float
+    irrigation_frequency: float
+    crop_density: float
+    pest_pressure: float
+    fertilizer_usage: float
+    growth_stage: int
+    urban_area_proximity: float
+    water_source_type: int
+    frost_risk: float
+    water_usage_efficiency: float
+
+
+class AgroImpactLiteRequest(BaseModel):
+    latitude: float
+    longitude: float
+    crop: str
+    sowing_date: str
+    pest_level: str
+
+
 class RiskInput(BaseModel):
     weather_volatility: float
     price_fluctuation: float
     crop_sensitivity: int
 
 
-# Livestock Request
 class LivestockInput(BaseModel):
     movement: float
     feeding: int
@@ -129,7 +173,7 @@ def predict_base_yield(input_dict):
 # ENDPOINTS
 # ================================
 
-#  Crop Yield Prediction
+# 🌾 Crop Yield
 @app.post("/predict", response_model=CropResponse)
 def predict_crop_yield(data: CropRequest):
 
@@ -164,7 +208,27 @@ def predict_crop_yield(data: CropRequest):
     }
 
 
-#  Crop Risk Prediction
+# 🌿 Agro Impact
+@app.post("/agro-impact")
+def agro_impact_endpoint(data: AgroImpactRequest):
+    return predict_agro_impact(data.dict())
+
+
+@app.post("/agro-impact-lite")
+def agro_impact_lite_endpoint(data: AgroImpactLiteRequest):
+
+    features = build_feature_vector(
+        lat=data.latitude,
+        lon=data.longitude,
+        crop=data.crop,
+        sowing_date=data.sowing_date,
+        pest_level=data.pest_level
+    )
+
+    return predict_agro_impact(features)
+
+
+# 📉 Crop Risk
 @app.post("/predict-risk")
 def predict_risk(data: RiskInput):
 
@@ -179,7 +243,7 @@ def predict_risk(data: RiskInput):
     }
 
 
-#  Livestock Health Prediction
+# 🐄 Livestock Health
 @app.post("/predict-livestock")
 def predict_livestock(data: LivestockInput):
 
@@ -196,7 +260,6 @@ def predict_livestock(data: LivestockInput):
     label = livestock_label_encoder.inverse_transform(prediction)[0]
     confidence = float(np.max(probabilities) * 100)
 
-    # Optional action mapping
     action_map = {
         "Healthy": "No action required",
         "Needs Attention": "Monitor closely & check feeding behavior",
