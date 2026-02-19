@@ -33,7 +33,6 @@ df = pd.DataFrame({
     "risk": risk
 })
 
-# 2️⃣ Train Model
 X = df[["weather_volatility", "price_fluctuation", "crop_sensitivity"]]
 y = df["risk"]
 
@@ -42,11 +41,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 model = RandomForestClassifier(n_estimators=100)
 model.fit(X_train, y_train)
 
-# 3️⃣ Evaluate
 y_pred = model.predict(X_test)
 print(classification_report(y_test, y_pred))
 
-# 4️⃣ Save Model
+
 os.makedirs("models", exist_ok=True)
 joblib.dump(model, "models/risk_model.pkl")
 
