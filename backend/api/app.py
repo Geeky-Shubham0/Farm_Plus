@@ -24,6 +24,11 @@ from backend.models.model_8_fpo_marketplace.schemas.marketplace_schemas import (
     FarmerLot,
     CompanyRequirement
 )
+from backend.models.model_9_dynamic_pricing.models.pricing_engine import PricingEngine
+from backend.models.model_9_dynamic_pricing.schemas.pricing_schemas import (
+    PricingRequest,
+    PricingResponse
+)
 class CropRequest(BaseModel):
     Crop: str = "Wheat"
     Season: str = "Rabi"
@@ -193,6 +198,8 @@ app = FastAPI(
 )
 # MODEL 8 - FPO MARKETPLACE ENGINE
 marketplace_engine = MarketplaceEngine()
+
+pricing_engine = PricingEngine()
 
 # REAL-TIME MARKET PRICE WEBSOCKET
 market_ws_clients = set()
@@ -574,3 +581,17 @@ def match_company(req: CompanyRequirement):
     if not results:
         return {"message": "No matching lots available"}
     return results
+
+# MODEL 9 - DYNAMIC PRICING
+
+@app.post("/calculate-price", response_model=PricingResponse)
+def calculate_price(data: PricingRequest):
+
+    result = pricing_engine.calculate_price(
+        fpqi=data.fpqi,
+        base_market_price=data.base_market_price,
+        farmer_trust_score=data.farmer_trust_score,
+        distance_km=data.distance_km
+    )
+
+    return result
