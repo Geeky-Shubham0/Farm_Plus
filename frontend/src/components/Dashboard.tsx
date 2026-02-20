@@ -1,30 +1,89 @@
-import { FaBell, FaCog, FaExclamationTriangle, FaChartLine } from "react-icons/fa";
+import { useEffect, useMemo, useState } from "react";
+import { FaExclamationTriangle, FaChartLine } from "react-icons/fa";
 import { GiCow, GiWheat } from "react-icons/gi";
+import {
+  getPriceIntelligence,
+  predictCropYield,
+  predictLivestock,
+  predictRisk,
+  type CropYieldResponse,
+  type LivestockResponse,
+  type PriceIntelligenceResponse,
+  type RiskResponse,
+} from "../lib/api";
 import "./dashboard.css";
 
 const Dashboard = () => {
+  const [cropData, setCropData] = useState<CropYieldResponse | null>(null);
+  const [riskData, setRiskData] = useState<RiskResponse | null>(null);
+  const [livestockData, setLivestockData] = useState<LivestockResponse | null>(null);
+  const [priceData, setPriceData] = useState<PriceIntelligenceResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [crop, risk, livestock, price] = await Promise.all([
+          predictCropYield({
+            Crop: "Wheat",
+            Season: "Rabi",
+            State: "Punjab",
+            Crop_Year: 2026,
+            Area: 1.8,
+            Production: 4.9,
+            Annual_Rainfall: 620,
+            fertilizer_per_area: 140,
+            pesticide_per_area: 7,
+            soil_type: "Loamy",
+            rainfall_deviation: -0.08,
+          }),
+          predictRisk({
+            weather_volatility: 0.42,
+            price_fluctuation: 0.31,
+            crop_sensitivity: 2,
+          }),
+          predictLivestock({
+            movement: 0.61,
+            feeding: 1,
+            resting: 0.58,
+            temperature: 101.2,
+          }),
+          getPriceIntelligence({
+            crop: "Wheat",
+            mandi: "Noida",
+            days: 3,
+          }),
+        ]);
+
+        setCropData(crop);
+        setRiskData(risk);
+        setLivestockData(livestock);
+        setPriceData(price);
+      } catch (requestError) {
+        setError(requestError instanceof Error ? requestError.message : "Failed to load dashboard data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadDashboard();
+  }, []);
+
+  const latestPredictedPrice = useMemo(() => {
+    if (!priceData?.forecast.length) {
+      return null;
+    }
+    return Math.round(priceData.forecast[priceData.forecast.length - 1].predicted_price);
+  }, [priceData]);
+
+  const formattedRisk = riskData?.risk_level ?? "Unknown";
+
   return (
     <div className="dash-page">
-
-      {/* ── NAVBAR ── */}
-      <nav className="dash-nav">
-        <div className="dash-nav-left">
-          <div className="dash-logo">
-            <div className="logo-circle">🌱</div>
-            <span>Farm+</span>
-          </div>
-          <a href="#">Home</a>
-          <a href="#" className="active">Smart Advisory</a>
-          <a href="#">Livestock</a>
-          <a href="#">Market &amp; Trade</a>
-          <a href="#">Govt Schemes</a>
-        </div>
-        <div className="dash-nav-right">
-          <FaBell size={17} />
-          <FaCog size={17} />
-          <button className="nav-btn">View Full Report</button>
-        </div>
-      </nav>
 
       {/* ── PROFILE BAR ── */}
       <div className="profile-bar">
@@ -45,6 +104,9 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {loading && <div className="profile-bar">Loading smart advisory insights...</div>}
+      {error && !loading && <div className="profile-bar">{error}</div>}
+
       {/* ── STAT CARDS ── */}
       <div className="stat-row">
         <div className="stat-card">
@@ -57,24 +119,24 @@ const Dashboard = () => {
         <div className="stat-card">
           <div className="sc-label">💧 Soil Health</div>
           <div className="sc-content">
-            <div className="sc-big">Low</div>
-            <div className="sc-small">Fertility Stats: Moderate</div>
+            <div className="sc-big">{formattedRisk}</div>
+            <div className="sc-small">Risk model status</div>
           </div>
         </div>
         <div className="stat-card">
           <div className="sc-label"><FaChartLine size={11}/> Market Price</div>
           <div className="sc-content">
-            <div className="sc-big">₹2A5 <small>/atl</small></div>
-            <div className="sc-small">Wheat: ₹2150/qtl</div>
+            <div className="sc-big">₹{latestPredictedPrice ?? 0} <small>/qtl</small></div>
+            <div className="sc-small">{priceData?.selected_mandi ?? "Noida"}: live forecast</div>
           </div>
         </div>
         <div className="stat-card">
           <div className="sc-label"><GiCow size={13}/> Livestock</div>
           <div className="sc-content">
-            <div className="sc-big">⚠️ 2 At-Risk</div>
+            <div className="sc-big">{livestockData?.health_status ?? "Pending"}</div>
             <div className="sc-small">
-              <span className="pill py">Medium</span>
-              <span className="pill pr">Risk</span>
+              <span className="pill py">Confidence</span>
+              <span className="pill pr">{livestockData?.confidence_percent?.toFixed(0) ?? "--"}%</span>
             </div>
           </div>
         </div>
@@ -99,8 +161,8 @@ const Dashboard = () => {
                 <div className="cbadge">🌾 Medium</div>
               </div>
               <div className="crop-right">
-                <div className="cyield">4.8 <small>tons /<br/>hectare</small></div>
-                <div className="cconf">Confidence: <b>91%</b></div>
+                <div className="cyield">{cropData?.adjusted_yield?.toFixed(2) ?? "--"} <small>tons /<br/>hectare</small></div>
+                <div className="cconf">Confidence: <b>{cropData?.confidence?.toFixed(0) ?? "--"}%</b></div>
                 <button className="gbtn">View Detailed Analysis</button>
               </div>
             </div>
@@ -126,9 +188,9 @@ const Dashboard = () => {
                 <text x="60" y="74" textAnchor="middle" fontSize="9" fill="#e53935">1</text>
               </svg>
               <div className="live-legend">
-                <div><span className="dot dg"/>Healthy: <b>9</b></div>
-                <div><span className="dot dy"/>Needs Attention: <b>2</b></div>
-                <div><span className="dot dr"/>Critical: <b>1</b></div>
+                <div><span className="dot dg"/>Status: <b>{livestockData?.health_status ?? "Pending"}</b></div>
+                <div><span className="dot dy"/>Action: <b>{livestockData?.recommended_action ?? "--"}</b></div>
+                <div><span className="dot dr"/>Confidence: <b>{livestockData?.confidence_percent?.toFixed(0) ?? "--"}%</b></div>
                 <button className="gbtn mt8">Open Health Details</button>
               </div>
             </div>
@@ -152,16 +214,16 @@ const Dashboard = () => {
             <div className="alert-item">
               <FaExclamationTriangle color="#e65100" size={13}/>
               <div>
-                <div><span className="al-y">Medium</span> - Rainfall deviation</div>
-                <div className="al-sub">detected. Reduce irrigation by 20%.</div>
+                <div><span className="al-y">Risk</span> - Crop risk status</div>
+                <div className="al-sub">Model reports: {formattedRisk}.</div>
               </div>
               <span className="al-arr">›</span>
             </div>
             <div className="alert-item">
               <FaExclamationTriangle color="#2e7d32" size={13}/>
               <div>
-                <div><span className="al-g">Low</span> - Wheat market stable,</div>
-                <div className="al-sub">trend looks good. Consider holding stock.</div>
+                <div><span className="al-g">Market</span> - Wheat trend updated,</div>
+                <div className="al-sub">forecasted mandi price: ₹{latestPredictedPrice ?? 0}/qtl.</div>
               </div>
               <span className="al-arr">›</span>
             </div>

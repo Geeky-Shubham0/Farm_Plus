@@ -1,10 +1,36 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./livestock.css";
 import dairyImg from '../assets/dairy-contracts.jpg';
 import livestockImg from '../assets/livestock-marketplace.jpg';
+import { predictLivestock, type LivestockResponse } from "../lib/api";
 
 const LivestockCare = () => {
   const [activeTab, setActiveTab] = useState("health");
+  const [prediction, setPrediction] = useState<LivestockResponse | null>(null);
+  const [loadingPrediction, setLoadingPrediction] = useState(false);
+  const [predictionError, setPredictionError] = useState<string | null>(null);
+
+  const loadLivestockPrediction = async () => {
+    try {
+      setLoadingPrediction(true);
+      setPredictionError(null);
+      const response = await predictLivestock({
+        movement: 0.67,
+        feeding: 1,
+        resting: 0.59,
+        temperature: 101.4,
+      });
+      setPrediction(response);
+    } catch (error) {
+      setPredictionError(error instanceof Error ? error.message : "Unable to sync livestock model data.");
+    } finally {
+      setLoadingPrediction(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadLivestockPrediction();
+  }, []);
 
   const livestock = [
     { id: "#14", name: "Cow #14", breed: "Taj", task: "Ihy day", due: "Tomorrow", color: "#f59e0b" },
@@ -48,27 +74,6 @@ const LivestockCare = () => {
 
   return (
     <div className="lc-page">
-      {/* Navbar */}
-      <nav className="lc-navbar">
-        <div className="lc-brand">
-          <span className="lc-logo">🌿</span>
-          <span className="lc-brand-name">Farm+</span>
-        </div>
-        <div className="lc-nav-links">
-          <a href="#">Home</a>
-          <a href="#">Smart Advisory</a>
-          <a href="#">Market</a>
-          <a href="#" className="active">Livestock Care</a>
-          <a href="#">Government Schemes</a>
-          <a href="#">Knowledge Hub</a>
-        </div>
-        <div className="lc-nav-actions">
-          <span className="lc-icon">👤</span>
-          <span className="lc-icon">⚙️</span>
-          <span className="lc-icon">🔔</span>
-          <button className="lc-login-btn">Login</button>
-        </div>
-      </nav>
 
       {/* Hero Banner */}
       <div className="lc-hero">
@@ -110,12 +115,15 @@ const LivestockCare = () => {
             <span className="lc-summary-title">Health Monitoring Summary</span>
             <div className="lc-summary-badges">
               <span className="lc-badge lc-badge-total">🐄 68 Total</span>
-              <span className="lc-badge lc-badge-healthy">⚡ 6 healthy</span>
+              <span className="lc-badge lc-badge-healthy">⚡ {prediction?.health_status ?? "Pending"}</span>
               <span className="lc-badge lc-badge-priority">📋 5 #ity</span>
-              <span className="lc-badge lc-badge-issues">❤️ 2 Issues</span>
+              <span className="lc-badge lc-badge-issues">❤️ {prediction?.confidence_percent?.toFixed(0) ?? "--"}% confidence</span>
             </div>
-            <button className="lc-sync-btn">⟳ Sync IOT Data</button>
+            <button className="lc-sync-btn" onClick={() => void loadLivestockPrediction()} disabled={loadingPrediction}>
+              {loadingPrediction ? "⟳ Syncing..." : "⟳ Sync IOT Data"}
+            </button>
           </div>
+          {predictionError && <div className="lc-summary-bar">{predictionError}</div>}
 
           {/* Health Overview + Cow Detail */}
           <div className="lc-cards-row">
@@ -151,9 +159,9 @@ const LivestockCare = () => {
                 <span className="lc-alert-icon">⚠️</span>
                 <div className="lc-alert-text">
                   <strong>AI Alert</strong>
-                  <span className="lc-alert-sub">Discreation</span>
+                  <span className="lc-alert-sub">{prediction?.health_status ?? "Pending"}</span>
                 </div>
-                <span className="lc-alert-desc">High temperature and low activity detected: Possible lameness</span>
+                <span className="lc-alert-desc">{prediction?.recommended_action ?? "Sync IoT data to receive recommendations."}</span>
                 <span className="lc-chevron">&gt;</span>
               </div>
             </div>

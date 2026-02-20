@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./ExportBidding.css";
-import { postJson } from "../lib/api";
+import { getPriceIntelligence } from "../lib/api";
 
 interface ExportOffer {
   id: string;
@@ -9,16 +9,6 @@ interface ExportOffer {
   quantity: string;
   destination: string;
   timeAgo: string;
-}
-
-interface PriceForecastItem {
-  date: string;
-  predicted_price: number;
-}
-
-interface PriceIntelligenceResponse {
-  selected_mandi: string;
-  forecast: PriceForecastItem[];
 }
 
 const mockOffers: ExportOffer[] = [
@@ -50,7 +40,7 @@ const ExportBidding: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await postJson<PriceIntelligenceResponse>("/price-intelligence", {
+      const response = await getPriceIntelligence({
         crop: selectedCrop,
         mandi: "Noida",
         days: 3,

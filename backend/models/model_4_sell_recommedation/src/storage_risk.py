@@ -11,5 +11,4 @@ def evaluate_storage_risk(crop, days_wait):
         else:
             return "low"
 
-    # Non-perishable crops
     return "low"
