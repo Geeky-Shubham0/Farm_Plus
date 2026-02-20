@@ -14,9 +14,6 @@ def predict_next_days(crop: str, mandi: str, days: int = 7):
     Uses recursive forecasting based on last 3 lag values.
     """
 
-    # -----------------------------
-    # Load model
-    # -----------------------------
     model_name = f"{crop}_{mandi}.pkl"
     model_name = model_name.replace(" ", "_").replace("/", "_")
 
@@ -26,10 +23,6 @@ def predict_next_days(crop: str, mandi: str, days: int = 7):
         raise ValueError(f"Model not found for: {crop} - {mandi}")
 
     model = joblib.load(model_path)
-
-    # -----------------------------
-    # Load historical data
-    # -----------------------------
     df = pd.read_csv(CLEAN_PATH)
 
     df = df[
@@ -45,9 +38,6 @@ def predict_next_days(crop: str, mandi: str, days: int = 7):
     predictions = []
     temp_df = df.copy()
 
-    # -----------------------------
-    # Recursive forecasting loop
-    # -----------------------------
     for _ in range(days):
 
         last3 = temp_df.tail(3)
@@ -71,7 +61,6 @@ def predict_next_days(crop: str, mandi: str, days: int = 7):
             "predicted_price": round(next_price, 2)
         })
 
-        # Append predicted value for recursive next step
         new_row = {
             "Commodity": crop,
             "Market Name": mandi,
@@ -84,8 +73,6 @@ def predict_next_days(crop: str, mandi: str, days: int = 7):
 
     return predictions
 
-
-# Optional testing block (safe)
 if __name__ == "__main__":
     result = predict_next_days("Rice", "Guwahati", 7)
     print(result)

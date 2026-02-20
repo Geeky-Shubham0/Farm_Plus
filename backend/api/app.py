@@ -11,6 +11,7 @@ from backend.models.model_1_crop_yield_estimation.src.confidence.confidence_scor
 from backend.models.model_2_agro_impact.src.predict_impact import predict_agro_impact
 from backend.models.model_2_agro_impact.src.feature_builder import build_feature_vector
 from backend.models.model_3_market_price.src.price_intelligence import get_price_intelligence
+from backend.models.model_4_sell_recommedation.src.recommendation import get_sell_recommendation
 class CropRequest(BaseModel):
     Crop: str
     Season: str
@@ -82,6 +83,13 @@ class PriceRequest(BaseModel):
     zip_code: str | None = None
     country_code: str = "IN"
     days: int = 7
+
+class SellRequest(BaseModel):
+    crop: str
+    mandi: str | None = None
+    zip_code: str | None = None
+    days: int = 7
+    weather_input: dict
 
 # ================================
 # BASE DIRECTORY SETUP
@@ -285,4 +293,15 @@ def price_endpoint(data: PriceRequest):
         zip_code=data.zip_code,
         country_code=data.country_code,
         days=data.days
+    )
+
+@app.post("/sell-recommendation")
+def sell_endpoint(data: SellRequest):
+
+    return get_sell_recommendation(
+        crop=data.crop,
+        mandi=data.mandi,
+        zip_code=data.zip_code,
+        days=data.days,
+        weather_input=data.weather_input
     )
