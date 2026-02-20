@@ -1,0 +1,81 @@
+.knowledge-section {
+  background: #fff;
+  margin: 0 auto 2rem;
+  max-width: 1100px;
+  border-radius: 16px;
+  padding: 1.8rem 2.5rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+.knowledge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.4rem;
+}
+
+.knowledge-header h2 {
+  font-family: 'Merriweather', serif;
+  font-size: 1.3rem;
+  color: #1a3d1a;
+}
+
+.browse-btn {
+  background: transparent;
+  border: 2px solid #2d6a2d;
+  color: #2d6a2d;
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  transition: all 0.2s;
+}
+
+.browse-btn:hover { background: #2d6a2d; color: #fff; }
+
+.knowledge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.knowledge-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: #f2faf2;
+  border: 1px solid #c8e6c8;
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.knowledge-card:hover {
+  background: #e0f5e0;
+  box-shadow: 0 4px 12px rgba(45,106,45,0.15);
+  transform: translateY(-2px);
+}
+
+.k-icon { font-size: 1.3rem; }
+
+.k-label {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1a3d1a;
+}
+
+.k-arrow {
+  font-size: 1.1rem;
+  color: #2d6a2d;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .knowledge-grid { grid-template-columns: repeat(2, 1fr); }
+  .knowledge-section { margin: 1rem; padding: 1.2rem; }
+}

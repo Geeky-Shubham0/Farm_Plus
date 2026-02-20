@@ -1,0 +1,27 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.app-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.bottom-band {
+  background: #2d6a2d;
+  height: 12px;
+  width: 100%;
+}
+
+.page-body {
+  background: #e8f5e8;
+  padding: 2rem 0;
+}

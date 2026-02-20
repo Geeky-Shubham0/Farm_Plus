@@ -1,0 +1,58 @@
+.cta-section {
+  position: relative;
+  width: 100%;
+  padding: 5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 2rem;
+}
+
+.cta-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 40, 10, 0.68);
+}
+
+.cta-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 600px;
+}
+
+.cta-content h2 {
+  font-family: 'Merriweather', serif;
+  color: #fff;
+  font-size: 2rem;
+  margin-bottom: 0.8rem;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+}
+
+.cta-content p {
+  color: #d4f5d4;
+  font-size: 1rem;
+  margin-bottom: 1.6rem;
+  line-height: 1.6;
+}
+
+.cta-btn {
+  padding: 0.85rem 2.5rem;
+  background: #c8a000;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: 'Open Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+
+.cta-btn:hover {
+  background: #a07800;
+  transform: translateY(-2px);
+}

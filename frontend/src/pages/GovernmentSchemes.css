@@ -1,0 +1,268 @@
+.gs-root {
+  font-family: 'Open Sans', sans-serif;
+  min-height: 100vh;
+  background: #c8dfc8;        /* dark green tint below hero */
+}
+
+/* ── HERO ── */
+.gs-hero {
+  position: relative;
+  width: 100%;
+  min-height: 440px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-start;
+  padding: 2rem 3rem 5rem;   /* more bottom padding so cards overlap nicely */
+}
+
+.gs-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.gs-hero-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 760px;
+}
+
+/* Breadcrumb */
+.gs-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.gs-bc-link {
+  color: #d4edda;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.gs-bc-link:hover { color: #fff; }
+
+.gs-bc-sep { color: #aaa; }
+
+.gs-bc-current { color: #fff; font-weight: 600; }
+
+/* Title */
+.gs-hero-content h1 {
+  font-family: 'Merriweather', serif;
+  color: #fff;
+  font-size: 2.4rem;
+  margin-bottom: 0.4rem;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+}
+
+.gs-hero-content p {
+  color: #d4edda;
+  font-size: 0.95rem;
+  margin-bottom: 1.4rem;
+}
+
+/* Search */
+.gs-search-bar {
+  display: flex;
+  max-width: 660px;           /* slightly wider to match image 2 */
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  margin-bottom: 1.2rem;
+}
+
+.gs-search-bar input {
+  flex: 1;
+  padding: 0.85rem 1.2rem;
+  border: none;
+  font-size: 0.92rem;
+  font-family: 'Open Sans', sans-serif;
+  outline: none;
+  color: #444;
+}
+
+.gs-search-bar input::placeholder { color: #999; }
+
+.gs-search-bar button {
+  padding: 0.85rem 1.8rem;
+  background: #2d6a2d;
+  color: #fff;
+  border: none;
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-family: 'Open Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.gs-search-bar button:hover { background: #1e4e1e; }
+
+/* Filters */
+.gs-filters {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.gs-filter-btn {
+  padding: 0.42rem 1.1rem;
+  border-radius: 20px;
+  border: 2px solid rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: 'Open Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gs-filter-btn:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+.gs-filter-btn.active {
+  background: #2d6a2d;
+  border-color: #2d6a2d;
+  color: #fff;
+}
+
+/* ── BODY ── */
+.gs-body {
+  max-width: 860px;
+  margin: -3.5rem 0 3rem 3rem; /* left-aligned to match hero padding */
+  padding: 0;
+  position: relative;
+  z-index: 3;
+}
+
+.gs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+/* Scheme Card */
+.gs-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.3rem 1.6rem;
+  display: flex;
+  align-items: center;        /* vertically center icon + text + button */
+  justify-content: space-between;
+  gap: 1.2rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.gs-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(45,106,45,0.15);
+}
+
+.gs-card-left {
+  display: flex;
+  align-items: center;        /* icon centered with text block */
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;               /* prevents text overflow */
+}
+
+.gs-card-icon {
+  font-size: 1.6rem;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f9f0;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.gs-card-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.gs-card-info h3 {
+  font-family: 'Merriweather', serif;
+  font-size: 0.97rem;
+  color: #1a3d1a;
+  margin-bottom: 0.18rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gs-category {
+  font-size: 0.78rem;
+  color: #6b8c65;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.gs-card-info p {
+  font-size: 0.83rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.gs-apply-btn {
+  padding: 0.52rem 1.5rem;
+  background: #f5e6a3;
+  color: #5a4000;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: 'Open Sans', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  align-self: center;         /* always centered vertically in card */
+}
+
+.gs-apply-btn:hover { background: #e8d070; }
+
+/* Read All */
+.gs-read-all {
+  text-align: right;
+  margin-top: 1rem;
+}
+
+.gs-read-btn {
+  background: transparent;
+  border: none;
+  color: #2d6a2d;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: 'Open Sans', sans-serif;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.gs-read-btn:hover { color: #1e4e1e; }
+
+@media (max-width: 768px) {
+  .gs-hero { padding: 2rem 1.5rem 4rem; min-height: auto; }
+  .gs-hero-content h1 { font-size: 1.7rem; }
+  .gs-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .gs-card-left { align-items: flex-start; }
+  .gs-apply-btn { align-self: flex-start; }
+  .gs-body { margin: 1rem 0 2rem 1rem; padding: 0; }
+}
