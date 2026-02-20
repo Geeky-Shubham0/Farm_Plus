@@ -213,33 +213,62 @@ async def broadcast_market_price(price_data: dict):
 # ================================
 # DEMO: BACKGROUND TASK FOR PRICE UPDATES
 # ================================
-from fastapi import BackgroundTasks
-from fastapi import Request
-
-# Native FastAPI background task for periodic price updates
+from backend.models.model_3_market_price.src.agmarknet_api import fetch_agmarknet_data
+# Native FastAPI background task for periodic price updates using Agmarknet
 @app.on_event("startup")
 async def start_price_update_task():
     async def price_update_loop():
         while True:
-            price = random.randint(2100, 2300)
-            change = random.randint(-50, 50)
-            changeType = 'positive' if change >= 0 else 'negative'
-            current = random.randint(250, 350)
-            target = 2500
-            maxv = random.randint(100, 200)
-            importExport = round(random.uniform(5.5, 7.0), 1)
-            forecast = random.choice(['High', 'Mid', 'Low'])
-            await broadcast_market_price({
-                'price': price,
-                'change': abs(change),
-                'changeType': changeType,
-                'current': current,
-                'target': target,
-                'max': maxv,
-                'importExport': importExport,
-                'forecast': forecast
-            })
-            await asyncio.sleep(2)
+            try:
+                # Example: fetch latest wheat price from Delhi mandi
+                df = fetch_agmarknet_data(commodity="Wheat", market="Delhi", state="Delhi")
+                if not df.empty:
+                    latest = df.sort_values("Price_Date").iloc[-1]
+                    price = latest["Modal_Price"]
+                    change = 0  # Could be calculated from previous day
+                    changeType = 'neutral'
+                    current = price
+                    target = price
+                    maxv = price
+                    importExport = 0
+                    forecast = 'Live'
+                    await broadcast_market_price({
+                        'price': price,
+                        'change': abs(change),
+                        'changeType': changeType,
+                        'current': current,
+                        'target': target,
+                        'max': maxv,
+                        'importExport': importExport,
+                        'forecast': forecast,
+                        'commodity': latest["Commodity"],
+                        'market': latest["Market"],
+                        'state': latest["State"],
+                        'date': latest["Price_Date"]
+                    })
+                else:
+                    # fallback to random demo data
+                    price = random.randint(2100, 2300)
+                    change = random.randint(-50, 50)
+                    changeType = 'positive' if change >= 0 else 'negative'
+                    current = random.randint(250, 350)
+                    target = 2500
+                    maxv = random.randint(100, 200)
+                    importExport = round(random.uniform(5.5, 7.0), 1)
+                    forecast = random.choice(['High', 'Mid', 'Low'])
+                    await broadcast_market_price({
+                        'price': price,
+                        'change': abs(change),
+                        'changeType': changeType,
+                        'current': current,
+                        'target': target,
+                        'max': maxv,
+                        'importExport': importExport,
+                        'forecast': forecast
+                    })
+            except Exception as e:
+                print(f"Agmarknet fetch error: {e}")
+            await asyncio.sleep(10)
     import asyncio
     loop = asyncio.get_event_loop()
     loop.create_task(price_update_loop())
@@ -368,6 +397,7 @@ def predict_livestock(data: LivestockInput):
         "recommended_action": action_map.get(label)
     }
 #model 3 - market price intelligence
+#model 3 - market price intelligence
 @app.post("/price-intelligence")
 def price_endpoint(data: PriceRequest):
 
@@ -378,6 +408,28 @@ def price_endpoint(data: PriceRequest):
         country_code=data.country_code,
         days=data.days
     )
+
+# New endpoint: Live market price from Agmarknet
+from fastapi import Query
+@app.get("/market-live")
+def market_live(
+    commodity: str = Query("Wheat"),
+    market: str = Query("Delhi"),
+    state: str = Query("Delhi"),
+    start_date: str = Query(None),
+    end_date: str = Query(None)
+):
+    df = fetch_agmarknet_data(commodity=commodity, market=market, state=state, start_date=start_date, end_date=end_date)
+    if df.empty:
+        raise HTTPException(status_code=404, detail="No data found from Agmarknet API")
+    latest = df.sort_values("Price_Date").iloc[-1]
+    return {
+        "commodity": latest["Commodity"],
+        "market": latest["Market"],
+        "state": latest["State"],
+        "modal_price": latest["Modal_Price"],
+        "date": latest["Price_Date"]
+    }
 
 @app.post("/sell-recommendation")
 def sell_endpoint(data: SellRequest):

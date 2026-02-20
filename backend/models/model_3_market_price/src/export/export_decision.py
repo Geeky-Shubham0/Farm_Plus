@@ -19,8 +19,8 @@ def analyze_export(crop, predicted_price):
     options = []
 
     for _, row in df.iterrows():
-
-        inr_price = usd_to_inr(row["usd_price_per_ton"])
+        usd_price = float(row["usd_price_per_ton"])
+        inr_price = usd_to_inr(usd_price)
         net_price = inr_price * 0.9
 
         profit = net_price - predicted_price

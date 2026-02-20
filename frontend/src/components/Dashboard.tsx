@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { FaExclamationTriangle, FaChartLine } from "react-icons/fa";
 import { GiCow, GiWheat } from "react-icons/gi";
 import {
@@ -16,37 +16,56 @@ import {
 } from "../lib/api";
 import "./dashboard.css";
 
+function getSeasonFromDate(date: Date) {
+  // India: Rabi (Oct-Mar), Kharif (Jun-Oct), Zaid (Mar-Jun)
+  const month = date.getMonth() + 1;
+  if (month >= 10 || month <= 3) return "Rabi";
+  if (month >= 6 && month <= 10) return "Kharif";
+  return "Zaid";
+}
+
+
 const Dashboard = () => {
   const navigate = useNavigate();
-  const routeLocation = useLocation();
   const [activeTrendTab, setActiveTrendTab] = useState<"yield" | "market" | "livestock">("yield");
   const [cropData, setCropData] = useState<CropYieldResponse | null>(null);
   const [riskData, setRiskData] = useState<RiskResponse | null>(null);
   const [livestockData, setLivestockData] = useState<LivestockResponse | null>(null);
   const [priceData, setPriceData] = useState<PriceIntelligenceResponse | null>(null);
   const [agroImpactData, setAgroImpactData] = useState<AgroImpactResponse | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const searchParams = useMemo(() => new URLSearchParams(routeLocation.search), [routeLocation.search]);
-  const selectedLocation = searchParams.get("location")?.trim() || "Punjab";
+  // Loading states for each stat card
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [soilLoading, setSoilLoading] = useState(true);
+  const [marketLoading, setMarketLoading] = useState(true);
+  const [livestockLoading, setLivestockLoading] = useState(true);
+  // Real-time location and season
+  const [userLocation] = useState<string>("Detecting...");
+  const [season] = useState<string>(getSeasonFromDate(new Date()));
+  const [seasonYear] = useState<number>(new Date().getFullYear());
+  // Use window.location.search for searchParams
+  const searchParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const selectedLocation = searchParams.get("location")?.trim() || userLocation;
   const latFromQuery = Number(searchParams.get("lat"));
   const lngFromQuery = Number(searchParams.get("lng"));
   const latitude = Number.isFinite(latFromQuery) ? latFromQuery : 30.901;
-  const longitude = Number.isFinite(lngFromQuery) ? lngFromQuery : 75.8573;
+    const longitude = Number.isFinite(lngFromQuery) ? lngFromQuery : 75.857; // Fixed typo for longitude default value
 
+  // Unified polling effect for all stat cards
   useEffect(() => {
-    const loadDashboard = async () => {
+    let isMounted = true;
+    async function pollAll() {
+      setWeatherLoading(true);
+      setSoilLoading(true);
+      setMarketLoading(true);
+      setLivestockLoading(true);
       try {
-        setLoading(true);
-        setError(null);
-
         const [crop, risk, livestock, price, agroImpact] = await Promise.all([
           predictCropYield({
             Crop: "Wheat",
-            Season: "Rabi",
-            State: "Punjab",
-            Crop_Year: 2026,
+            Season: season,
+            State: selectedLocation,
+            Crop_Year: seasonYear,
             Area: 1.8,
             Production: 4.9,
             Annual_Rainfall: 620,
@@ -75,25 +94,35 @@ const Dashboard = () => {
             latitude,
             longitude,
             crop: "wheat",
-            sowing_date: "2026-01-01",
+            sowing_date: `${seasonYear}-01-01`,
             pest_level: "Medium",
           }),
         ]);
-
+        if (!isMounted) return;
         setCropData(crop);
         setRiskData(risk);
         setLivestockData(livestock);
         setPriceData(price);
         setAgroImpactData(agroImpact);
+        setWeatherLoading(false);
+        setSoilLoading(false);
+        setMarketLoading(false);
+        setLivestockLoading(false);
+        setError(null);
       } catch (requestError) {
+        if (!isMounted) return;
         setError(requestError instanceof Error ? requestError.message : "Failed to load dashboard data.");
-      } finally {
-        setLoading(false);
+        setWeatherLoading(false);
+        setSoilLoading(false);
+        setMarketLoading(false);
+        setLivestockLoading(false);
       }
-    };
-
-    void loadDashboard();
-  }, [latitude, longitude]);
+    }
+    pollAll();
+    const interval = setInterval(pollAll, 10000); // every 10s
+    return () => { isMounted = false; clearInterval(interval); };
+  }, [latitude, longitude, season, seasonYear, selectedLocation]);
+// Removed duplicate/old predictCropYield and related calls with snake_case/PascalCase properties
 
   const latestPredictedPrice = useMemo(() => {
     if (!priceData?.forecast.length) {
@@ -123,8 +152,8 @@ const Dashboard = () => {
             <div className="farmer-name">Farmer Dashboard</div>
             <div className="farmer-meta">
               <span>📍 Location: {selectedLocation}</span>
-              <span>👤 Livestock: Rabi</span>
-              <span>📅 Season: Rabi 2026</span>
+              <span>👤 Livestock: {livestockData?.health_status ?? "Detecting..."}</span>
+              <span>📅 Season: {season} {seasonYear}</span>
             </div>
           </div>
         </div>
@@ -134,39 +163,39 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {loading && <div className="profile-bar">Loading smart advisory insights...</div>}
-      {error && !loading && <div className="profile-bar">{error}</div>}
+      {(weatherLoading || soilLoading || marketLoading || livestockLoading) && <div className="profile-bar">Loading smart advisory insights...</div>}
+      {error && <div className="profile-bar">{error}</div>}
 
       {/* ── STAT CARDS ── */}
       <div className="stat-row">
         <div className="stat-card">
           <div className="sc-label">☀️ Weather</div>
           <div className="sc-content">
-            <div className="sc-big">{agroImpactText}</div>
-            <div className="sc-small">Agro impact confidence: {agroImpactConfidence?.toFixed(2) ?? "--"}</div>
+            {weatherLoading ? <div className="sc-big">Loading...</div> : <div className="sc-big">{agroImpactText}</div>}
+            <div className="sc-small">Agro impact confidence: {weatherLoading ? "--" : agroImpactConfidence?.toFixed(2) ?? "--"}</div>
           </div>
         </div>
         <div className="stat-card">
           <div className="sc-label">💧 Soil Health</div>
           <div className="sc-content">
-            <div className="sc-big">{formattedRisk}</div>
+            {soilLoading ? <div className="sc-big">Loading...</div> : <div className="sc-big">{formattedRisk}</div>}
             <div className="sc-small">Risk model status</div>
           </div>
         </div>
         <div className="stat-card">
           <div className="sc-label"><FaChartLine size={11}/> Market Price</div>
           <div className="sc-content">
-            <div className="sc-big">₹{latestPredictedPrice ?? 0} <small>/qtl</small></div>
+            {marketLoading ? <div className="sc-big">Loading...</div> : <div className="sc-big">₹{latestPredictedPrice ?? 0} <small>/qtl</small></div>}
             <div className="sc-small">{priceData?.selected_mandi ?? "Noida"}: live forecast</div>
           </div>
         </div>
         <div className="stat-card">
           <div className="sc-label"><GiCow size={13}/> Livestock</div>
           <div className="sc-content">
-            <div className="sc-big">{livestockData?.health_status ?? "Pending"}</div>
+            {livestockLoading ? <div className="sc-big">Loading...</div> : <div className="sc-big">{livestockData?.health_status ?? "Pending"}</div>}
             <div className="sc-small">
               <span className="pill py">Confidence</span>
-              <span className="pill pr">{livestockData?.confidence_percent?.toFixed(0) ?? "--"}%</span>
+              <span className="pill pr">{livestockLoading ? "--" : livestockData?.confidence_percent?.toFixed(0) ?? "--"}%</span>
             </div>
           </div>
         </div>
