@@ -19,6 +19,11 @@ from backend.models.model_2_agro_impact.src.feature_builder import build_feature
 from backend.models.model_3_market_price.src.price_intelligence import get_price_intelligence
 from backend.models.model_4_sell_recommedation.src.recommendation import get_sell_recommendation
 from backend.api.firebase_auth import is_firebase_configured, verify_firebase_id_token
+from backend.models.model_8_fpo_marketplace.models.marketplace_engine import MarketplaceEngine
+from backend.models.model_8_fpo_marketplace.schemas.marketplace_schemas import (
+    FarmerLot,
+    CompanyRequirement
+)
 class CropRequest(BaseModel):
     Crop: str = "Wheat"
     Season: str = "Rabi"
@@ -186,6 +191,8 @@ app = FastAPI(
     title="Farm+ AI API",
     version="1.0"
 )
+# MODEL 8 - FPO MARKETPLACE ENGINE
+marketplace_engine = MarketplaceEngine()
 
 # REAL-TIME MARKET PRICE WEBSOCKET
 market_ws_clients = set()
@@ -546,3 +553,24 @@ def calculate_fpqi(data: FPQIRequest):
         "fpqi": round(fpqi_value, 2),
         "grade": grade
     }
+# MODEL 8 - FPO MARKETPLACE ENDPOINTS
+
+@app.post("/submit-lot")
+def submit_lot(lot: FarmerLot):
+    return marketplace_engine.submit_lot(lot)
+
+
+@app.post("/aggregate-fpo")
+def aggregate_fpo(fpo_id: str, crop: str, grade: str):
+    result = marketplace_engine.aggregate(fpo_id, crop, grade)
+    if not result:
+        raise HTTPException(status_code=404, detail="No matching lots found")
+    return result
+
+
+@app.post("/match-company")
+def match_company(req: CompanyRequirement):
+    results = marketplace_engine.match(req)
+    if not results:
+        return {"message": "No matching lots available"}
+    return results
