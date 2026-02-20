@@ -1,3 +1,5 @@
+from typing import List
+from statistics import variance, mean
 from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +10,8 @@ import joblib
 import sys
 import os
 from pydantic import BaseModel
+from typing import Optional
+from pydantic import Field
 from backend.models.model_1_crop_yield_estimation.src.local_adjustment.apply_adjustment import apply_adjustment
 from backend.models.model_1_crop_yield_estimation.src.confidence.confidence_score import confidence_score
 from backend.models.model_2_agro_impact.src.predict_impact import predict_agro_impact
@@ -210,11 +214,7 @@ async def broadcast_market_price(price_data: dict):
     for ws in to_remove:
         market_ws_clients.discard(ws)
 
-# ================================
-# DEMO: BACKGROUND TASK FOR PRICE UPDATES
-# ================================
 from backend.models.model_3_market_price.src.agmarknet_api import fetch_agmarknet_data
-# Native FastAPI background task for periodic price updates using Agmarknet
 @app.on_event("startup")
 async def start_price_update_task():
     async def price_update_loop():
@@ -247,7 +247,6 @@ async def start_price_update_task():
                         'date': latest["Price_Date"]
                     })
                 else:
-                    # fallback to random demo data
                     price = random.randint(2100, 2300)
                     change = random.randint(-50, 50)
                     changeType = 'positive' if change >= 0 else 'negative'
@@ -284,21 +283,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# ================================
 # HELPER FUNCTION
-# ================================
 def predict_base_yield(input_dict):
     df = pd.DataFrame([input_dict])
     log_pred = crop_model.predict(df)[0]
     return float(np.expm1(log_pred))
 
-
-# ================================
 # ENDPOINTS
-# ================================
-
-# 🌾 Crop Yield
+#  Crop Yield
 @app.post("/predict", response_model=CropResponse)
 def predict_crop_yield(data: CropRequest):
 
@@ -332,8 +324,7 @@ def predict_crop_yield(data: CropRequest):
         "confidence": round(conf_value, 2)
     }
 
-
-# 🌿 Agro Impact
+# Agro Impact
 @app.post("/agro-impact")
 def agro_impact_endpoint(data: AgroImpactRequest):
     return predict_agro_impact(data.dict())
@@ -353,7 +344,7 @@ def agro_impact_lite_endpoint(data: AgroImpactLiteRequest):
     return predict_agro_impact(features)
 
 
-# 📉 Crop Risk
+# Crop Risk
 @app.post("/predict-risk")
 def predict_risk(data: RiskInput):
 
@@ -368,7 +359,7 @@ def predict_risk(data: RiskInput):
     }
 
 
-# 🐄 Livestock Health
+# Livestock Health
 @app.post("/predict-livestock")
 def predict_livestock(data: LivestockInput):
 
@@ -396,7 +387,6 @@ def predict_livestock(data: LivestockInput):
         "confidence_percent": round(confidence, 2),
         "recommended_action": action_map.get(label)
     }
-#model 3 - market price intelligence
 #model 3 - market price intelligence
 @app.post("/price-intelligence")
 def price_endpoint(data: PriceRequest):
@@ -442,13 +432,11 @@ def sell_endpoint(data: SellRequest):
         weather_input=data.weather_input
     )
 
-
 @app.get("/firebase/status")
 def firebase_status():
     return {
         "configured": is_firebase_configured()
     }
-
 
 @app.post("/auth/verify-firebase-token")
 def verify_firebase_token(data: FirebaseTokenRequest):
@@ -465,3 +453,90 @@ def verify_firebase_token(data: FirebaseTokenRequest):
         "name": decoded_token.get("name"),
         "email_verified": decoded_token.get("email_verified", False)
     }
+class SensorRecord(BaseModel):
+    farmer_id: str
+    soil_moisture: float = Field(..., ge=0, le=100)
+    temperature: float = Field(..., ge=-10, le=60)
+    humidity: float = Field(..., ge=0, le=100)
+    timestamp: str 
+
+SENSOR_DATA = []
+
+def validate_and_clamp_sensor_data(data: dict) -> Optional[SensorRecord]:
+    required = ["farmer_id", "soil_moisture", "temperature", "humidity", "timestamp"]
+    for field in required:
+        if data.get(field) is None:
+            return None
+    try:
+        temp = float(data["temperature"])
+        moist = float(data["soil_moisture"])
+        humid = float(data["humidity"])
+    except Exception:
+        return None
+    temp = max(-10, min(60, temp))
+    moist = max(0, min(100, moist))
+    humid = max(0, min(100, humid))
+    try:
+        from datetime import datetime
+        ts = datetime.fromisoformat(data["timestamp"])
+        ts_str = ts.isoformat()
+    except Exception:
+        return None
+    return SensorRecord(
+        farmer_id=str(data["farmer_id"]),
+        soil_moisture=moist,
+        temperature=temp,
+        humidity=humid,
+        timestamp=ts_str
+    )
+
+from fastapi import status
+from fastapi.responses import JSONResponse
+
+@app.post("/sensor-data", response_model=SensorRecord)
+def ingest_sensor_data(data: dict):
+    record = validate_and_clamp_sensor_data(data)
+    if not record:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"success": False, "error": "Invalid or missing sensor data"})
+    SENSOR_DATA.append(record.dict())
+    return record
+
+class FeatureMetrics(BaseModel):
+    moisture_stability_score: float
+    soil_health_score: float
+    heat_stress_index: float
+    storage_risk_score: float
+
+def compute_feature_metrics(sensor_records: List[dict]) -> FeatureMetrics:
+    moistures = [r["soil_moisture"] for r in sensor_records]
+    temperatures = [r["temperature"] for r in sensor_records]
+    humidities = [r["humidity"] for r in sensor_records]
+    moist_var = variance(moistures) if len(moistures) > 1 else 0
+    moisture_stability = 100 - moist_var
+    soil_health = (mean(moistures) + mean(humidities)) / 2
+    heat_stress = 100
+    for t in temperatures:
+        if t > 35:
+            heat_stress -= 10  # penalty per high reading
+    storage_risk = 100 - (mean(humidities) if humidities else 0)
+    return FeatureMetrics(
+        moisture_stability_score=max(0, moisture_stability),
+        soil_health_score=max(0, soil_health),
+        heat_stress_index=max(0, heat_stress),
+        storage_risk_score=max(0, storage_risk)
+    )
+
+from fastapi import Query
+
+@app.get("/feature-metrics", response_model=FeatureMetrics)
+def get_feature_metrics(
+    farmer_id: str = Query(...),
+    hours: int = Query(24)
+):
+    from datetime import datetime, timedelta
+    now = datetime.utcnow()
+    window_start = now - timedelta(hours=hours)
+    records = [r for r in SENSOR_DATA if r["farmer_id"] == farmer_id and datetime.fromisoformat(r["timestamp"]) >= window_start]
+    if not records:
+        return FeatureMetrics(moisture_stability_score=0, soil_health_score=0, heat_stress_index=0, storage_risk_score=0)
+    return compute_feature_metrics(records)
