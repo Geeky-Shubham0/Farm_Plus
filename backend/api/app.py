@@ -5,95 +5,12 @@ import numpy as np
 import joblib
 import sys
 import os
-
-# ================================
-# BASE DIRECTORY SETUP
-# ================================
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
-# ================================
-# MODEL 1 - CROP YIELD MODEL
-# ================================
-MODEL_1_PATH = os.path.join(
-    BASE_DIR,
-    "models",
-    "model_1_crop_yield_estimation"
-)
-
-sys.path.append(MODEL_1_PATH)
-
+from pydantic import BaseModel
 from backend.models.model_1_crop_yield_estimation.src.local_adjustment.apply_adjustment import apply_adjustment
 from backend.models.model_1_crop_yield_estimation.src.confidence.confidence_score import confidence_score
-
-CROP_MODEL_PATH = os.path.join(
-    MODEL_1_PATH,
-    "models",
-    "base_crop_yield_model.pkl"
-)
-
-crop_model = joblib.load(CROP_MODEL_PATH)
-
-# ================================
-# MODEL 2 - AGRO IMPACT MODEL
-# ================================
-MODEL_2_PATH = os.path.join(
-    BASE_DIR,
-    "models",
-    "model_2_agro_impact"
-)
-
-sys.path.append(MODEL_2_PATH)
-
 from backend.models.model_2_agro_impact.src.predict_impact import predict_agro_impact
 from backend.models.model_2_agro_impact.src.feature_builder import build_feature_vector
-
-# ================================
-# MODEL 5 - CROP RISK MODEL
-# ================================
-RISK_MODEL_PATH = os.path.join(
-    BASE_DIR,
-    "models",
-    "model_5_crop_risk_model",
-    "models",
-    "risk_model.pkl"
-)
-
-risk_model = joblib.load(RISK_MODEL_PATH)
-
-# ================================
-# MODEL 6 - LIVESTOCK HEALTH MODEL
-# ================================
-LIVESTOCK_MODEL_PATH = os.path.join(
-    BASE_DIR,
-    "models",
-    "model_6_livestock_health_model",
-    "models",
-    "livestock_health_model.pkl"
-)
-
-LIVESTOCK_ENCODER_PATH = os.path.join(
-    BASE_DIR,
-    "models",
-    "model_6_livestock_health_model",
-    "models",
-    "label_encoder.pkl"
-)
-
-livestock_model = joblib.load(LIVESTOCK_MODEL_PATH)
-livestock_label_encoder = joblib.load(LIVESTOCK_ENCODER_PATH)
-
-# ================================
-# FASTAPI INIT
-# ================================
-app = FastAPI(
-    title="Farm+ AI API",
-    version="1.0"
-)
-
-# ================================
-# REQUEST SCHEMAS
-# ================================
-
+from backend.models.model_3_market_price.src.price_intelligence import get_price_intelligence
 class CropRequest(BaseModel):
     Crop: str
     Season: str
@@ -158,6 +75,93 @@ class LivestockInput(BaseModel):
     feeding: int
     resting: float
     temperature: float
+
+class PriceRequest(BaseModel):
+    crop: str
+    mandi: str | None = None
+    zip_code: str | None = None
+    country_code: str = "IN"
+    days: int = 7
+
+# ================================
+# BASE DIRECTORY SETUP
+# ================================
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+# ================================
+# MODEL 1 - CROP YIELD MODEL
+# ================================
+MODEL_1_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "model_1_crop_yield_estimation"
+)
+
+sys.path.append(MODEL_1_PATH)
+
+
+
+CROP_MODEL_PATH = os.path.join(
+    MODEL_1_PATH,
+    "models",
+    "base_crop_yield_model.pkl"
+)
+
+crop_model = joblib.load(CROP_MODEL_PATH)
+
+# ================================
+# MODEL 2 - AGRO IMPACT MODEL
+# ================================
+MODEL_2_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "model_2_agro_impact"
+)
+
+sys.path.append(MODEL_2_PATH)
+
+# ================================
+# MODEL 5 - CROP RISK MODEL
+# ================================
+RISK_MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "model_5_crop_risk_model",
+    "models",
+    "risk_model.pkl"
+)
+
+risk_model = joblib.load(RISK_MODEL_PATH)
+
+# ================================
+# MODEL 6 - LIVESTOCK HEALTH MODEL
+# ================================
+LIVESTOCK_MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "model_6_livestock_health_model",
+    "models",
+    "livestock_health_model.pkl"
+)
+
+LIVESTOCK_ENCODER_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "model_6_livestock_health_model",
+    "models",
+    "label_encoder.pkl"
+)
+
+livestock_model = joblib.load(LIVESTOCK_MODEL_PATH)
+livestock_label_encoder = joblib.load(LIVESTOCK_ENCODER_PATH)
+
+# ================================
+# FASTAPI INIT
+# ================================
+app = FastAPI(
+    title="Farm+ AI API",
+    version="1.0"
+)
 
 
 # ================================
@@ -271,3 +275,14 @@ def predict_livestock(data: LivestockInput):
         "confidence_percent": round(confidence, 2),
         "recommended_action": action_map.get(label)
     }
+#model 3 - market price intelligence
+@app.post("/price-intelligence")
+def price_endpoint(data: PriceRequest):
+
+    return get_price_intelligence(
+        crop=data.crop,
+        mandi=data.mandi,
+        zip_code=data.zip_code,
+        country_code=data.country_code,
+        days=data.days
+    )
