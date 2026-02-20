@@ -1,30 +1,33 @@
 import './KnowledgeHub.css';
+import { useNavigate } from 'react-router-dom';
 
 const KnowledgeHub = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="knowledge-section">
       <div className="knowledge-header">
         <h2>Knowledge Hub for Farmers</h2>
-        <button className="browse-btn">Browse More</button>
+        <button className="browse-btn" onClick={() => navigate('/knowledge-hub')}>Browse More</button>
       </div>
 
       <div className="knowledge-grid">
-        <div className="knowledge-card">
+        <div className="knowledge-card" onClick={() => navigate('/knowledge-hub')} role="button" tabIndex={0}>
           <span className="k-icon">▶️</span>
           <span className="k-label">Video Guide</span>
           <span className="k-arrow">›</span>
         </div>
-        <div className="knowledge-card">
+        <div className="knowledge-card" onClick={() => navigate('/knowledge-hub')} role="button" tabIndex={0}>
           <span className="k-icon">📰</span>
           <span className="k-label">Latest Articles</span>
           <span className="k-arrow">›</span>
         </div>
-        <div className="knowledge-card">
+        <div className="knowledge-card" onClick={() => navigate('/knowledge-hub')} role="button" tabIndex={0}>
           <span className="k-icon">🌱</span>
           <span className="k-label">Soil Health Tips</span>
           <span className="k-arrow">›</span>
         </div>
-        <div className="knowledge-card">
+        <div className="knowledge-card" onClick={() => navigate('/knowledge-hub')} role="button" tabIndex={0}>
           <span className="k-icon">🚜</span>
           <span className="k-label">Farm Updates</span>
           <span className="k-arrow">›</span>

@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { FaExclamationTriangle, FaChartLine } from "react-icons/fa";
 import { GiCow, GiWheat } from "react-icons/gi";
 import {
   getPriceIntelligence,
+  predictAgroImpactLite,
   predictCropYield,
   predictLivestock,
   predictRisk,
+  type AgroImpactResponse,
   type CropYieldResponse,
   type LivestockResponse,
   type PriceIntelligenceResponse,
@@ -14,12 +17,23 @@ import {
 import "./dashboard.css";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const routeLocation = useLocation();
+  const [activeTrendTab, setActiveTrendTab] = useState<"yield" | "market" | "livestock">("yield");
   const [cropData, setCropData] = useState<CropYieldResponse | null>(null);
   const [riskData, setRiskData] = useState<RiskResponse | null>(null);
   const [livestockData, setLivestockData] = useState<LivestockResponse | null>(null);
   const [priceData, setPriceData] = useState<PriceIntelligenceResponse | null>(null);
+  const [agroImpactData, setAgroImpactData] = useState<AgroImpactResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const searchParams = useMemo(() => new URLSearchParams(routeLocation.search), [routeLocation.search]);
+  const selectedLocation = searchParams.get("location")?.trim() || "Punjab";
+  const latFromQuery = Number(searchParams.get("lat"));
+  const lngFromQuery = Number(searchParams.get("lng"));
+  const latitude = Number.isFinite(latFromQuery) ? latFromQuery : 30.901;
+  const longitude = Number.isFinite(lngFromQuery) ? lngFromQuery : 75.8573;
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -27,7 +41,7 @@ const Dashboard = () => {
         setLoading(true);
         setError(null);
 
-        const [crop, risk, livestock, price] = await Promise.all([
+        const [crop, risk, livestock, price, agroImpact] = await Promise.all([
           predictCropYield({
             Crop: "Wheat",
             Season: "Rabi",
@@ -57,12 +71,20 @@ const Dashboard = () => {
             mandi: "Noida",
             days: 3,
           }),
+          predictAgroImpactLite({
+            latitude,
+            longitude,
+            crop: "wheat",
+            sowing_date: "2026-01-01",
+            pest_level: "Medium",
+          }),
         ]);
 
         setCropData(crop);
         setRiskData(risk);
         setLivestockData(livestock);
         setPriceData(price);
+        setAgroImpactData(agroImpact);
       } catch (requestError) {
         setError(requestError instanceof Error ? requestError.message : "Failed to load dashboard data.");
       } finally {
@@ -71,7 +93,7 @@ const Dashboard = () => {
     };
 
     void loadDashboard();
-  }, []);
+  }, [latitude, longitude]);
 
   const latestPredictedPrice = useMemo(() => {
     if (!priceData?.forecast.length) {
@@ -81,6 +103,14 @@ const Dashboard = () => {
   }, [priceData]);
 
   const formattedRisk = riskData?.risk_level ?? "Unknown";
+  const agroImpactText = agroImpactData?.impact?.replace(/_/g, " ") ?? "pending";
+  const agroImpactConfidence = agroImpactData?.confidence;
+  const trendValue =
+    activeTrendTab === "yield"
+      ? `${cropData?.adjusted_yield?.toFixed(2) ?? "--"} tons/hectare`
+      : activeTrendTab === "market"
+        ? `₹${latestPredictedPrice ?? 0}/qtl`
+        : `${livestockData?.health_status ?? "Pending"} (${livestockData?.confidence_percent?.toFixed(0) ?? "--"}%)`;
 
   return (
     <div className="dash-page">
@@ -92,15 +122,15 @@ const Dashboard = () => {
           <div>
             <div className="farmer-name">Farmer Dashboard</div>
             <div className="farmer-meta">
-              <span>📍 Location: Punjab</span>
+              <span>📍 Location: {selectedLocation}</span>
               <span>👤 Livestock: Rabi</span>
               <span>📅 Season: Rabi 2026</span>
             </div>
           </div>
         </div>
         <div className="profile-right">
-          <button className="btn-outline">🌱 Smart Agency &gt;</button>
-          <button className="btn-solid">📊 View Full Report</button>
+          <button className="btn-outline" onClick={() => navigate('/smart-advisory')}>🌱 Smart Agency &gt;</button>
+          <button className="btn-solid" onClick={() => navigate('/market')}>📊 View Full Report</button>
         </div>
       </div>
 
@@ -112,8 +142,8 @@ const Dashboard = () => {
         <div className="stat-card">
           <div className="sc-label">☀️ Weather</div>
           <div className="sc-content">
-            <div className="sc-big">32°C Sunny</div>
-            <div className="sc-small">🌧 Rain: 4 mm</div>
+            <div className="sc-big">{agroImpactText}</div>
+            <div className="sc-small">Agro impact confidence: {agroImpactConfidence?.toFixed(2) ?? "--"}</div>
           </div>
         </div>
         <div className="stat-card">
@@ -163,7 +193,7 @@ const Dashboard = () => {
               <div className="crop-right">
                 <div className="cyield">{cropData?.adjusted_yield?.toFixed(2) ?? "--"} <small>tons /<br/>hectare</small></div>
                 <div className="cconf">Confidence: <b>{cropData?.confidence?.toFixed(0) ?? "--"}%</b></div>
-                <button className="gbtn">View Detailed Analysis</button>
+                <button className="gbtn" onClick={() => navigate('/market')}>View Detailed Analysis</button>
               </div>
             </div>
           </div>
@@ -191,7 +221,7 @@ const Dashboard = () => {
                 <div><span className="dot dg"/>Status: <b>{livestockData?.health_status ?? "Pending"}</b></div>
                 <div><span className="dot dy"/>Action: <b>{livestockData?.recommended_action ?? "--"}</b></div>
                 <div><span className="dot dr"/>Confidence: <b>{livestockData?.confidence_percent?.toFixed(0) ?? "--"}%</b></div>
-                <button className="gbtn mt8">Open Health Details</button>
+                <button className="gbtn mt8" onClick={() => navigate('/livestock-care')}>Open Health Details</button>
               </div>
             </div>
           </div>
@@ -206,8 +236,8 @@ const Dashboard = () => {
             <div className="alert-item">
               <FaExclamationTriangle color="#c62828" size={13}/>
               <div>
-                <div><span className="al-r">Critical</span> - Cow #B45</div>
-                <div className="al-sub">has a respiratory issue. Immediate vet consultation needed.</div>
+                <div><span className="al-r">Agro</span> - Weather impact</div>
+                <div className="al-sub">Model reports {agroImpactText} with confidence {agroImpactConfidence?.toFixed(2) ?? "--"}.</div>
               </div>
               <span className="al-arr">›</span>
             </div>
@@ -227,7 +257,7 @@ const Dashboard = () => {
               </div>
               <span className="al-arr">›</span>
             </div>
-            <button className="take-btn">Take Action</button>
+            <button className="take-btn" onClick={() => navigate('/market')}>Take Action</button>
           </div>
         </div>
 
@@ -236,13 +266,31 @@ const Dashboard = () => {
           <div className="card-header">
             <span className="card-title">Trends &amp; Analytics</span>
             <div className="ttabs">
-              <button className="ttab on">Yield Trend</button>
-              <button className="ttab">Market Trend</button>
-              <button className="ttab">Livestock</button>
+              <button
+                className={`ttab ${activeTrendTab === "yield" ? "on" : ""}`}
+                onClick={() => setActiveTrendTab("yield")}
+              >
+                Yield Trend
+              </button>
+              <button
+                className={`ttab ${activeTrendTab === "market" ? "on" : ""}`}
+                onClick={() => setActiveTrendTab("market")}
+              >
+                Market Trend
+              </button>
+              <button
+                className={`ttab ${activeTrendTab === "livestock" ? "on" : ""}`}
+                onClick={() => setActiveTrendTab("livestock")}
+              >
+                Livestock
+              </button>
             </div>
             <span className="rtag">🌧 15 mm Next 24h</span>
           </div>
           <div className="trends-body">
+            <div className="cconf" style={{ marginBottom: "8px" }}>
+              Current {activeTrendTab} signal: <b>{trendValue}</b>
+            </div>
             <svg viewBox="0 0 560 105" width="100%" style={{flex:1}} preserveAspectRatio="xMidYMid meet">
               <defs>
                 <linearGradient id="yg" x1="0" y1="0" x2="0" y2="1">

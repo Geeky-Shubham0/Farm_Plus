@@ -1,26 +1,102 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./livestock.css";
 import dairyImg from '../assets/dairy-contracts.jpg';
 import livestockImg from '../assets/livestock-marketplace.jpg';
-import { predictLivestock, type LivestockResponse } from "../lib/api";
+import {
+  predictAgroImpact,
+  predictLivestock,
+  type AgroImpactResponse,
+  type LivestockResponse,
+} from "../lib/api";
 
 const LivestockCare = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("health");
   const [prediction, setPrediction] = useState<LivestockResponse | null>(null);
+  const [agroImpact, setAgroImpact] = useState<AgroImpactResponse | null>(null);
   const [loadingPrediction, setLoadingPrediction] = useState(false);
   const [predictionError, setPredictionError] = useState<string | null>(null);
 
-  const loadLivestockPrediction = async () => {
+  const loadLivestockPrediction = async (tab: string) => {
     try {
       setLoadingPrediction(true);
       setPredictionError(null);
-      const response = await predictLivestock({
-        movement: 0.67,
-        feeding: 1,
-        resting: 0.59,
-        temperature: 101.4,
+
+      if (tab === "health") {
+        const [livestockResponse, agroImpactResponse] = await Promise.all([
+          predictLivestock({
+            movement: 0.67,
+            feeding: 1,
+            resting: 0.59,
+            temperature: 101.4,
+          }),
+          predictAgroImpact({
+            N: 50,
+            P: 45,
+            K: 50,
+            temperature: 29,
+            humidity: 62,
+            ph: 6.5,
+            rainfall: 20,
+            soil_moisture: 40,
+            soil_type: 2,
+            sunlight_exposure: 8,
+            wind_speed: 7,
+            co2_concentration: 400,
+            organic_matter: 3,
+            irrigation_frequency: 3,
+            crop_density: 5,
+            pest_pressure: 0.5,
+            fertilizer_usage: 100,
+            growth_stage: 2,
+            urban_area_proximity: 10,
+            water_source_type: 1,
+            frost_risk: 0,
+            water_usage_efficiency: 2.5,
+          }),
+        ]);
+        setPrediction(livestockResponse);
+        setAgroImpact(agroImpactResponse);
+        return;
+      }
+
+      if (tab === "productivity") {
+        const livestockResponse = await predictLivestock({
+          movement: 0.72,
+          feeding: 1,
+          resting: 0.64,
+          temperature: 100.8,
+        });
+        setPrediction(livestockResponse);
+        return;
+      }
+
+      const agroImpactResponse = await predictAgroImpact({
+        N: 48,
+        P: 42,
+        K: 46,
+        temperature: 30,
+        humidity: 65,
+        ph: 6.4,
+        rainfall: 25,
+        soil_moisture: 45,
+        soil_type: 2,
+        sunlight_exposure: 8,
+        wind_speed: 8,
+        co2_concentration: 405,
+        organic_matter: 3,
+        irrigation_frequency: 3,
+        crop_density: 5,
+        pest_pressure: 0.6,
+        fertilizer_usage: 100,
+        growth_stage: 2,
+        urban_area_proximity: 10,
+        water_source_type: 1,
+        frost_risk: 0,
+        water_usage_efficiency: 2.5,
       });
-      setPrediction(response);
+      setAgroImpact(agroImpactResponse);
     } catch (error) {
       setPredictionError(error instanceof Error ? error.message : "Unable to sync livestock model data.");
     } finally {
@@ -29,8 +105,8 @@ const LivestockCare = () => {
   };
 
   useEffect(() => {
-    void loadLivestockPrediction();
-  }, []);
+    void loadLivestockPrediction(activeTab);
+  }, [activeTab]);
 
   const livestock = [
     { id: "#14", name: "Cow #14", breed: "Taj", task: "Ihy day", due: "Tomorrow", color: "#f59e0b" },
@@ -116,10 +192,10 @@ const LivestockCare = () => {
             <div className="lc-summary-badges">
               <span className="lc-badge lc-badge-total">🐄 68 Total</span>
               <span className="lc-badge lc-badge-healthy">⚡ {prediction?.health_status ?? "Pending"}</span>
-              <span className="lc-badge lc-badge-priority">📋 5 #ity</span>
+              <span className="lc-badge lc-badge-priority">📋 {agroImpact?.impact?.replace(/_/g, " ") ?? "Pending"}</span>
               <span className="lc-badge lc-badge-issues">❤️ {prediction?.confidence_percent?.toFixed(0) ?? "--"}% confidence</span>
             </div>
-            <button className="lc-sync-btn" onClick={() => void loadLivestockPrediction()} disabled={loadingPrediction}>
+            <button className="lc-sync-btn" onClick={() => void loadLivestockPrediction(activeTab)} disabled={loadingPrediction}>
               {loadingPrediction ? "⟳ Syncing..." : "⟳ Sync IOT Data"}
             </button>
           </div>
@@ -152,7 +228,15 @@ const LivestockCare = () => {
                   <span className="lc-stat-label">AI IOC-</span>
                 </div>
                 <div className="lc-stat">
-                  <span className="lc-view-insights">View Insights &gt;</span>
+                  <button
+                    className="lc-view-insights"
+                    onClick={() => {
+                      setActiveTab("health");
+                      void loadLivestockPrediction("health");
+                    }}
+                  >
+                    View Insights &gt;
+                  </button>
                 </div>
               </div>
               <div className="lc-alert-box">
@@ -161,7 +245,10 @@ const LivestockCare = () => {
                   <strong>AI Alert</strong>
                   <span className="lc-alert-sub">{prediction?.health_status ?? "Pending"}</span>
                 </div>
-                <span className="lc-alert-desc">{prediction?.recommended_action ?? "Sync IoT data to receive recommendations."}</span>
+                <span className="lc-alert-desc">
+                  {prediction?.recommended_action ?? "Sync IoT data to receive recommendations."}
+                  {agroImpact ? ` Agro impact: ${agroImpact.impact} (${agroImpact.confidence.toFixed(2)}).` : ""}
+                </span>
                 <span className="lc-chevron">&gt;</span>
               </div>
             </div>
@@ -207,7 +294,15 @@ const LivestockCare = () => {
                   <div className="lc-cow-img-placeholder">🐄</div>
                 </div>
               </div>
-              <button className="lc-milk-btn">🐄 ↓ 148 IL +1 liters</button>
+              <button
+                className="lc-milk-btn"
+                onClick={() => {
+                  setActiveTab("productivity");
+                  void loadLivestockPrediction("productivity");
+                }}
+              >
+                🐄 ↓ 148 IL +1 liters
+              </button>
             </div>
           </div>
 
@@ -236,7 +331,15 @@ const LivestockCare = () => {
                   <div className="lc-market-overlay" />
                 </div>
                 <div className="lc-market-label">Dairy Contracts</div>
-                <button className="lc-market-btn">Start Contract</button>
+                <button
+                  className="lc-market-btn"
+                  onClick={() => {
+                    setActiveTab("trade");
+                    void loadLivestockPrediction("trade");
+                  }}
+                >
+                  Start Contract
+                </button>
               </div>
 
               {/* Card 3 — Livestock Marketplace image */}
@@ -250,7 +353,7 @@ const LivestockCare = () => {
                   <div className="lc-market-overlay" />
                 </div>
                 <div className="lc-market-label">Livestock Marketplace</div>
-                <button className="lc-market-btn lc-market-btn-dark">Explore Offers &gt;</button>
+                <button className="lc-market-btn lc-market-btn-dark" onClick={() => navigate('/market')}>Explore Offers &gt;</button>
               </div>
 
             </div>

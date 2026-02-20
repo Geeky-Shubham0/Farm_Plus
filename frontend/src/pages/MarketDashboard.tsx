@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "./MarketDashboard.css";
 
 // Existing components (already in your project)
@@ -11,6 +12,8 @@ import TrendingCrops from "../components/TrendingCrops";
 import ResourcesTips from "../components/ResourcesTips";
 
 const MarketDashboard: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="md-root">
       {/* Navbar - already exists in your project */}
@@ -23,7 +26,7 @@ const MarketDashboard: React.FC = () => {
 
         <div className="md-hero-content">
           <nav className="md-breadcrumb">
-            <a href="/" className="md-breadcrumb-link">Home</a>
+            <button className="md-breadcrumb-link" onClick={() => navigate('/')}>Home</button>
             <span className="md-breadcrumb-sep">&rsaquo;</span>
             <span className="md-breadcrumb-current">Market Dashboard</span>
           </nav>
@@ -32,7 +35,7 @@ const MarketDashboard: React.FC = () => {
           <p className="md-hero-sub">Set competitive prices, sell domestically &amp; export easily</p>
         </div>
 
-        <button className="md-how-btn">
+        <button className="md-how-btn" onClick={() => navigate('/knowledge-hub')}>
           <span className="md-how-icon">?</span>
           Learn How Bidding Works &rsaquo;
         </button>

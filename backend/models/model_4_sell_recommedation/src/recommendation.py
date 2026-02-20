@@ -1,11 +1,11 @@
-from models.model_3_market_price.src.price_intelligence import get_price_intelligence
-from models.model_2_agro_impact.src.predict_impact import predict_agro_impact
+from backend.models.model_3_market_price.src.price_intelligence import get_price_intelligence
+from backend.models.model_2_agro_impact.src.predict_impact import predict_agro_impact
 
-from src.trend_analysis import analyze_price_trend
-from src.volatility_analysis import analyze_volatility
-from src.storage_risk import evaluate_storage_risk
-from src.confidence_score import calculate_confidence
-from src.sell_decision_engine import decide_sell_action
+from backend.models.model_4_sell_recommedation.src.trend_analysis import analyze_price_trend
+from backend.models.model_4_sell_recommedation.src.volatility_analysis import analyze_volatility
+from backend.models.model_4_sell_recommedation.src.storage_risk import evaluate_storage_risk
+from backend.models.model_4_sell_recommedation.src.confidence_score import calculate_confidence
+from backend.models.model_4_sell_recommedation.src.sell_decision_engine import decide_sell_action
 
 
 def get_sell_recommendation(crop,

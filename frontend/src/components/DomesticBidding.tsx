@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./DomesticBidding.css";
-import { getPriceIntelligence } from "../lib/api";
+import { getPriceIntelligence, getSellRecommendation } from "../lib/api";
 
 interface Bid {
   id: string;
@@ -21,6 +22,7 @@ const mockBids: Bid[] = [
 const crops = ["Wheat", "Rice", "Onion", "Potato", "Tomato"];
 
 const DomesticBidding: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedCrop, setSelectedCrop] = useState("Wheat");
   const [price, setPrice] = useState("2000");
   const [quantity, setQuantity] = useState("100");
@@ -40,11 +42,42 @@ const DomesticBidding: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await getPriceIntelligence({
-        crop: selectedCrop,
-        mandi: "Noida",
-        days: 3,
-      });
+      const [response, recommendation] = await Promise.all([
+        getPriceIntelligence({
+          crop: selectedCrop,
+          mandi: "Noida",
+          days: 3,
+        }),
+        getSellRecommendation({
+          crop: selectedCrop,
+          mandi: "Noida",
+          days: 3,
+          weather_input: {
+            N: 50,
+            P: 45,
+            K: 50,
+            temperature: 29,
+            humidity: 62,
+            ph: 6.5,
+            rainfall: 12,
+            soil_moisture: 40,
+            soil_type: 2,
+            sunlight_exposure: 8,
+            wind_speed: 7,
+            co2_concentration: 400,
+            organic_matter: 3,
+            irrigation_frequency: 3,
+            crop_density: 5,
+            pest_pressure: 0.5,
+            fertilizer_usage: 100,
+            growth_stage: 2,
+            urban_area_proximity: 10,
+            water_source_type: 1,
+            frost_risk: 0,
+            water_usage_efficiency: 2.5,
+          },
+        }),
+      ]);
 
       const mappedBids: Bid[] = response.forecast.map((item, index, forecast) => {
         const previousPrice = index > 0 ? forecast[index - 1].predicted_price : item.predicted_price;
@@ -63,13 +96,8 @@ const DomesticBidding: React.FC = () => {
         setBids(mappedBids);
       }
 
-      const analysis = response.export_analysis;
-      if (analysis && typeof analysis === "object") {
-        const firstStringValue = Object.values(analysis).find((value) => typeof value === "string") as string | undefined;
-        setInsight(firstStringValue ?? "Live market forecast synced.");
-      } else {
-        setInsight("Live market forecast synced.");
-      }
+      const recommendationLabel = recommendation.final_recommendation?.replace(/_/g, " ") ?? "HOLD";
+      setInsight(`Recommendation: ${recommendationLabel} (confidence ${recommendation.confidence_score})`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to fetch market insights.");
     } finally {
@@ -123,8 +151,8 @@ const DomesticBidding: React.FC = () => {
       {insight && !error && <p className="db-subtitle">{insight}</p>}
 
       <div className="db-links">
-        <a href="#" className="db-link">View Active Bids &rsaquo;</a>
-        <a href="#" className="db-link">View Market Insights &rsaquo;</a>
+        <button className="db-link" onClick={() => navigate('/market')}>View Active Bids &rsaquo;</button>
+        <button className="db-link" onClick={() => navigate('/smart-advisory')}>View Market Insights &rsaquo;</button>
       </div>
 
       <h3 className="db-bids-title">Active Bids</h3>

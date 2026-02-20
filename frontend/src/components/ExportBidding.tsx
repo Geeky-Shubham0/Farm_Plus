@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./ExportBidding.css";
-import { getPriceIntelligence } from "../lib/api";
+import { getPriceIntelligence, getSellRecommendation } from "../lib/api";
 
 interface ExportOffer {
   id: string;
@@ -21,6 +22,7 @@ const exportOrgs = ["ABC Agro Exports Ltd.", "GreenFields Int'l", "IndiGrain Exp
 const crops = ["Wheat", "Rice", "Onion", "Potato", "Tomato"];
 
 const ExportBidding: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedCrop, setSelectedCrop] = useState("Wheat");
   const [selectedOrg, setSelectedOrg] = useState(exportOrgs[0]);
   const [exportPrice, setExportPrice] = useState("2600");
@@ -29,6 +31,7 @@ const ExportBidding: React.FC = () => {
   const [offers, setOffers] = useState<ExportOffer[]>(mockOffers);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [insight, setInsight] = useState<string | null>(null);
 
   const handleAccept = (id: string) => {
     setAccepted(id);
@@ -40,11 +43,42 @@ const ExportBidding: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await getPriceIntelligence({
-        crop: selectedCrop,
-        mandi: "Noida",
-        days: 3,
-      });
+      const [response, recommendation] = await Promise.all([
+        getPriceIntelligence({
+          crop: selectedCrop,
+          mandi: "Noida",
+          days: 3,
+        }),
+        getSellRecommendation({
+          crop: selectedCrop,
+          mandi: "Noida",
+          days: 3,
+          weather_input: {
+            N: 50,
+            P: 45,
+            K: 50,
+            temperature: 29,
+            humidity: 62,
+            ph: 6.5,
+            rainfall: 12,
+            soil_moisture: 40,
+            soil_type: 2,
+            sunlight_exposure: 8,
+            wind_speed: 7,
+            co2_concentration: 400,
+            organic_matter: 3,
+            irrigation_frequency: 3,
+            crop_density: 5,
+            pest_pressure: 0.5,
+            fertilizer_usage: 100,
+            growth_stage: 2,
+            urban_area_proximity: 10,
+            water_source_type: 1,
+            frost_risk: 0,
+            water_usage_efficiency: 2.5,
+          },
+        }),
+      ]);
 
       const mappedOffers: ExportOffer[] = response.forecast.map((item, index) => ({
         id: `offer-${index}`,
@@ -58,6 +92,9 @@ const ExportBidding: React.FC = () => {
       if (mappedOffers.length > 0) {
         setOffers(mappedOffers);
       }
+
+      const recommendationLabel = recommendation.final_recommendation?.replace(/_/g, " ") ?? "HOLD";
+      setInsight(`Recommendation: ${recommendationLabel} (confidence ${recommendation.confidence_score})`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to fetch export offers.");
     } finally {
@@ -105,9 +142,10 @@ const ExportBidding: React.FC = () => {
       </button>
 
       {error && <p className="eb-subtitle">{error}</p>}
+      {insight && !error && <p className="eb-subtitle">{insight}</p>}
 
       <div className="eb-links">
-        <a href="#" className="eb-link">View Export Offers &rsaquo;</a>
+        <button className="eb-link" onClick={() => navigate('/market')}>View Export Offers &rsaquo;</button>
       </div>
 
       <h3 className="eb-offers-title">Export Offers</h3>

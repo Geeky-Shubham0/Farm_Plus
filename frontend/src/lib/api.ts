@@ -89,6 +89,63 @@ export interface PriceIntelligenceResponse {
   export_analysis?: Record<string, unknown>;
 }
 
+export interface AgroImpactResponse {
+  impact: string;
+  confidence: number;
+}
+
+export interface AgroImpactLiteRequest {
+  latitude: number;
+  longitude: number;
+  crop: string;
+  sowing_date: string;
+  pest_level: string;
+}
+
+export interface AgroImpactRequest {
+  N: number;
+  P: number;
+  K: number;
+  temperature: number;
+  humidity: number;
+  ph: number;
+  rainfall: number;
+  soil_moisture: number;
+  soil_type: number;
+  sunlight_exposure: number;
+  wind_speed: number;
+  co2_concentration: number;
+  organic_matter: number;
+  irrigation_frequency: number;
+  crop_density: number;
+  pest_pressure: number;
+  fertilizer_usage: number;
+  growth_stage: number;
+  urban_area_proximity: number;
+  water_source_type: number;
+  frost_risk: number;
+  water_usage_efficiency: number;
+}
+
+export interface SellRecommendationRequest {
+  crop: string;
+  mandi?: string;
+  zip_code?: string;
+  days?: number;
+  weather_input: AgroImpactRequest;
+}
+
+export interface SellRecommendationResponse {
+  selected_mandi: string;
+  trend_analysis: Record<string, unknown>;
+  volatility_analysis: Record<string, unknown>;
+  weather_risk: string;
+  storage_risk: string;
+  export_analysis: Record<string, unknown>;
+  final_recommendation: string;
+  confidence_score: number;
+}
+
 export function predictCropYield(body: CropYieldRequest) {
   return postJson<CropYieldResponse>('/predict', body);
 }
@@ -103,4 +160,16 @@ export function predictLivestock(body: LivestockRequest) {
 
 export function getPriceIntelligence(body: PriceIntelligenceRequest) {
   return postJson<PriceIntelligenceResponse>('/price-intelligence', body);
+}
+
+export function predictAgroImpact(body: AgroImpactRequest) {
+  return postJson<AgroImpactResponse>('/agro-impact', body);
+}
+
+export function predictAgroImpactLite(body: AgroImpactLiteRequest) {
+  return postJson<AgroImpactResponse>('/agro-impact-lite', body);
+}
+
+export function getSellRecommendation(body: SellRecommendationRequest) {
+  return postJson<SellRecommendationResponse>('/sell-recommendation', body);
 }

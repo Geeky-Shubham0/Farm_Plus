@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd
@@ -13,18 +14,19 @@ from backend.models.model_2_agro_impact.src.predict_impact import predict_agro_i
 from backend.models.model_2_agro_impact.src.feature_builder import build_feature_vector
 from backend.models.model_3_market_price.src.price_intelligence import get_price_intelligence
 from backend.models.model_4_sell_recommedation.src.recommendation import get_sell_recommendation
+from backend.api.firebase_auth import is_firebase_configured, verify_firebase_id_token
 class CropRequest(BaseModel):
-    Crop: str
-    Season: str
-    State: str
-    Crop_Year: int
-    Area: float
-    Production: float
-    Annual_Rainfall: float
-    fertilizer_per_area: float
-    pesticide_per_area: float
-    soil_type: str
-    rainfall_deviation: float
+    Crop: str = "Wheat"
+    Season: str = "Rabi"
+    State: str = "Punjab"
+    Crop_Year: int = 2023
+    Area: float = 2.5
+    Production: float = 6.0
+    Annual_Rainfall: float = 800.0
+    fertilizer_per_area: float = 120.0
+    pesticide_per_area: float = 2.0
+    soil_type: str = "Loamy"
+    rainfall_deviation: float = 5.0
 
 
 class CropResponse(BaseModel):
@@ -34,63 +36,67 @@ class CropResponse(BaseModel):
 
 
 class AgroImpactRequest(BaseModel):
-    N: float
-    P: float
-    K: float
-    temperature: float
-    humidity: float
-    ph: float
-    rainfall: float
-    soil_moisture: float
-    soil_type: int
-    sunlight_exposure: float
-    wind_speed: float
-    co2_concentration: float
-    organic_matter: float
-    irrigation_frequency: float
-    crop_density: float
-    pest_pressure: float
-    fertilizer_usage: float
-    growth_stage: int
-    urban_area_proximity: float
-    water_source_type: int
-    frost_risk: float
-    water_usage_efficiency: float
+    N: float = 90.0
+    P: float = 40.0
+    K: float = 40.0
+    temperature: float = 25.0
+    humidity: float = 60.0
+    ph: float = 6.5
+    rainfall: float = 100.0
+    soil_moisture: float = 30.0
+    soil_type: int = 1
+    sunlight_exposure: float = 8.0
+    wind_speed: float = 5.0
+    co2_concentration: float = 400.0
+    organic_matter: float = 2.0
+    irrigation_frequency: float = 2.0
+    crop_density: float = 1.5
+    pest_pressure: float = 0.5
+    fertilizer_usage: float = 100.0
+    growth_stage: int = 2
+    urban_area_proximity: float = 10.0
+    water_source_type: int = 1
+    frost_risk: float = 0.1
+    water_usage_efficiency: float = 0.8
 
 
 class AgroImpactLiteRequest(BaseModel):
-    latitude: float
-    longitude: float
-    crop: str
-    sowing_date: str
-    pest_level: str
+    latitude: float = 30.7333
+    longitude: float = 76.7794
+    crop: str = "Wheat"
+    sowing_date: str = "2023-11-01"
+    pest_level: str = "Low"
 
 
 class RiskInput(BaseModel):
-    weather_volatility: float
-    price_fluctuation: float
-    crop_sensitivity: int
+    weather_volatility: float = 0.7
+    price_fluctuation: float = 0.5
+    crop_sensitivity: int = 2
 
 
 class LivestockInput(BaseModel):
-    movement: float
-    feeding: int
-    resting: float
-    temperature: float
+    movement: float = 1.2
+    feeding: int = 3
+    resting: float = 6.0
+    temperature: float = 25.0
 
 class PriceRequest(BaseModel):
-    crop: str
-    mandi: str | None = None
-    zip_code: str | None = None
+    crop: str = "Wheat"
+    mandi: str | None = "Jhansi"
+    zip_code: str | None = "284135"
     country_code: str = "IN"
     days: int = 7
 
 class SellRequest(BaseModel):
-    crop: str
-    mandi: str | None = None
-    zip_code: str | None = None
+    crop: str = "Wheat"
+    mandi: str | None = "Jhansi"
+    zip_code: str | None = "284135"
     days: int = 7
-    weather_input: dict
+    weather_input: dict = {"temperature": 25.0, "humidity": 60.0, "rainfall": 100.0}
+
+
+class FirebaseTokenRequest(BaseModel):
+    id_token: str = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2ODg4In0.eyJpc3MiOiJodHRwczovL2ZpcmViYXNlYXBwLmNvbS8iLCJhdWQiOiJteWFwcCIsInN1YiI6InVzZXIxMjMifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
 
 # ================================
 # BASE DIRECTORY SETUP
@@ -167,10 +173,76 @@ livestock_label_encoder = joblib.load(LIVESTOCK_ENCODER_PATH)
 # ================================
 # FASTAPI INIT
 # ================================
+
+from fastapi import WebSocket, WebSocketDisconnect
+import asyncio
+import random
+
 app = FastAPI(
     title="Farm+ AI API",
     version="1.0"
 )
+
+# ================================
+# REAL-TIME MARKET PRICE WEBSOCKET
+# ================================
+market_ws_clients = set()
+
+@app.websocket("/ws/market")
+async def market_price_ws(websocket: WebSocket):
+    await websocket.accept()
+    market_ws_clients.add(websocket)
+    try:
+        while True:
+            # Keep connection alive; optionally receive pings
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        market_ws_clients.remove(websocket)
+
+# Helper to broadcast price updates to all connected clients
+async def broadcast_market_price(price_data: dict):
+    to_remove = set()
+    for ws in market_ws_clients:
+        try:
+            await ws.send_json(price_data)
+        except Exception:
+            to_remove.add(ws)
+    for ws in to_remove:
+        market_ws_clients.discard(ws)
+
+# ================================
+# DEMO: BACKGROUND TASK FOR PRICE UPDATES
+# ================================
+from fastapi import BackgroundTasks
+from fastapi import Request
+
+# Native FastAPI background task for periodic price updates
+@app.on_event("startup")
+async def start_price_update_task():
+    async def price_update_loop():
+        while True:
+            price = random.randint(2100, 2300)
+            change = random.randint(-50, 50)
+            changeType = 'positive' if change >= 0 else 'negative'
+            current = random.randint(250, 350)
+            target = 2500
+            maxv = random.randint(100, 200)
+            importExport = round(random.uniform(5.5, 7.0), 1)
+            forecast = random.choice(['High', 'Mid', 'Low'])
+            await broadcast_market_price({
+                'price': price,
+                'change': abs(change),
+                'changeType': changeType,
+                'current': current,
+                'target': target,
+                'max': maxv,
+                'importExport': importExport,
+                'forecast': forecast
+            })
+            await asyncio.sleep(2)
+    import asyncio
+    loop = asyncio.get_event_loop()
+    loop.create_task(price_update_loop())
 
 app.add_middleware(
     CORSMiddleware,
@@ -317,3 +389,27 @@ def sell_endpoint(data: SellRequest):
         days=data.days,
         weather_input=data.weather_input
     )
+
+
+@app.get("/firebase/status")
+def firebase_status():
+    return {
+        "configured": is_firebase_configured()
+    }
+
+
+@app.post("/auth/verify-firebase-token")
+def verify_firebase_token(data: FirebaseTokenRequest):
+    try:
+        decoded_token = verify_firebase_id_token(data.id_token)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail="Invalid Firebase ID token") from exc
+
+    return {
+        "uid": decoded_token.get("uid"),
+        "email": decoded_token.get("email"),
+        "name": decoded_token.get("name"),
+        "email_verified": decoded_token.get("email_verified", False)
+    }

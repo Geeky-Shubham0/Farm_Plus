@@ -73,11 +73,12 @@ const tabs = ['All', 'Articles', 'Videos', 'Soil Tips', 'Farm Updates'];
 const KnowledgeHubPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('All');
   const [search, setSearch] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
   const navigate = useNavigate();
 
   const filteredArticles = articles.filter(a =>
-    a.title.toLowerCase().includes(search.toLowerCase()) ||
-    a.category.toLowerCase().includes(search.toLowerCase())
+    a.title.toLowerCase().includes(appliedSearch.toLowerCase()) ||
+    a.category.toLowerCase().includes(appliedSearch.toLowerCase())
   );
 
   return (
@@ -101,7 +102,7 @@ const KnowledgeHubPage: React.FC = () => {
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            <button>Search</button>
+            <button onClick={() => setAppliedSearch(search.trim())}>Search</button>
           </div>
 
           {/* Tabs */}
@@ -127,7 +128,7 @@ const KnowledgeHubPage: React.FC = () => {
           <div className="kh-section">
             <div className="kh-section-header">
               <h2>📰 Latest Articles</h2>
-              <button className="kh-see-all">See All ›</button>
+              <button className="kh-see-all" onClick={() => setActiveTab('Articles')}>See All ›</button>
             </div>
             <div className="kh-articles-grid">
               {filteredArticles.map((a, i) => (
@@ -140,7 +141,12 @@ const KnowledgeHubPage: React.FC = () => {
                   <p>{a.desc}</p>
                   <div className="kh-article-footer">
                     <span className="kh-read-time">🕐 {a.time}</span>
-                    <button className="kh-read-btn">Read More →</button>
+                    <button
+                      className="kh-read-btn"
+                      onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(a.title)}`, '_blank', 'noopener,noreferrer')}
+                    >
+                      Read More →
+                    </button>
                   </div>
                 </div>
               ))}
@@ -153,7 +159,7 @@ const KnowledgeHubPage: React.FC = () => {
           <div className="kh-section">
             <div className="kh-section-header">
               <h2>▶️ Video Guides</h2>
-              <button className="kh-see-all">See All ›</button>
+              <button className="kh-see-all" onClick={() => setActiveTab('Videos')}>See All ›</button>
             </div>
             <div className="kh-videos-grid">
               {videos.map((v, i) => (
@@ -178,7 +184,7 @@ const KnowledgeHubPage: React.FC = () => {
             <div className="kh-section kh-tips-section">
               <div className="kh-section-header">
                 <h2>🌱 Soil Health Tips</h2>
-                <button className="kh-see-all">See All ›</button>
+                <button className="kh-see-all" onClick={() => setActiveTab('Soil Tips')}>See All ›</button>
               </div>
               <div className="kh-tips-list">
                 {tips.map((t, i) => (
@@ -195,7 +201,7 @@ const KnowledgeHubPage: React.FC = () => {
             <div className="kh-section kh-updates-section">
               <div className="kh-section-header">
                 <h2>🚜 Farm Updates</h2>
-                <button className="kh-see-all">See All ›</button>
+                <button className="kh-see-all" onClick={() => setActiveTab('Farm Updates')}>See All ›</button>
               </div>
               <div className="kh-updates-list">
                 {[

@@ -1,0 +1,31 @@
+crop,country,usd_price_per_ton
+Rice,Saudi Arabia,470
+Rice,UAE,455
+Rice,Benin,480
+Wheat,Bangladesh,310
+crop,country,usd_price_per_ton
+Rice,Saudi Arabia,470
+Rice,UAE,455
+Rice,Benin,480
+Rice,Iraq,465
+Rice,Iran,460
+Rice,Vietnam,475
+Wheat,Bangladesh,310
+Wheat,Nepal,305
+Wheat,Sri Lanka,315
+Wheat,UAE,300
+Wheat,Kenya,320
+Onion,Bangladesh,250
+Onion,Malaysia,260
+Onion,UAE,245
+Onion,Nepal,240
+Onion,Sri Lanka,255
+Potato,Nepal,220
+Potato,Bangladesh,215
+Potato,Sri Lanka,225
+Potato,UAE,230
+Potato,Oman,210
+Tomato,Bangladesh,190
+Tomato,Nepal,180
+Tomato,Malaysia,195
+Tomato,UAE,185

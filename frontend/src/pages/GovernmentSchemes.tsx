@@ -53,12 +53,13 @@ const filters = ['All', 'Subsidy', 'Insurance', 'Loan'];
 const GovernmentSchemes: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [search, setSearch] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
   const navigate = useNavigate();
 
   const filtered = schemes.filter(s => {
     const matchFilter = activeFilter === 'All' || s.type === activeFilter.toLowerCase();
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
-                        s.category.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = s.name.toLowerCase().includes(appliedSearch.toLowerCase()) ||
+                        s.category.toLowerCase().includes(appliedSearch.toLowerCase());
     return matchFilter && matchSearch;
   });
 
@@ -84,7 +85,7 @@ const GovernmentSchemes: React.FC = () => {
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            <button>Search</button>
+            <button onClick={() => setAppliedSearch(search.trim())}>Search</button>
           </div>
 
           <div className="gs-filters">
@@ -117,13 +118,23 @@ const GovernmentSchemes: React.FC = () => {
                   <p>{s.description}</p>
                 </div>
               </div>
-              <button className="gs-apply-btn">Apply</button>
+              <button
+                className="gs-apply-btn"
+                onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(`${s.name} apply online`)}`, '_blank', 'noopener,noreferrer')}
+              >
+                Apply
+              </button>
             </div>
           ))}
         </div>
 
         <div className="gs-read-all">
-          <button className="gs-read-btn">Read All Schemes ›</button>
+          <button
+            className="gs-read-btn"
+            onClick={() => window.open('https://agricoop.nic.in/en/programmes-schemes-listing', '_blank', 'noopener,noreferrer')}
+          >
+            Read All Schemes ›
+          </button>
         </div>
       </div>
     </div>
