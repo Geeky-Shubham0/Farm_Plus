@@ -32,12 +32,10 @@ class CropRequest(BaseModel):
     soil_type: str = "Loamy"
     rainfall_deviation: float = 5.0
 
-
 class CropResponse(BaseModel):
     base_yield: float
     adjusted_yield: float
     confidence: float
-
 
 class AgroImpactRequest(BaseModel):
     N: float = 90.0
@@ -63,7 +61,6 @@ class AgroImpactRequest(BaseModel):
     frost_risk: float = 0.1
     water_usage_efficiency: float = 0.8
 
-
 class AgroImpactLiteRequest(BaseModel):
     latitude: float = 30.7333
     longitude: float = 76.7794
@@ -71,12 +68,10 @@ class AgroImpactLiteRequest(BaseModel):
     sowing_date: str = "2023-11-01"
     pest_level: str = "Low"
 
-
 class RiskInput(BaseModel):
     weather_volatility: float = 0.7
     price_fluctuation: float = 0.5
     crop_sensitivity: int = 2
-
 
 class LivestockInput(BaseModel):
     movement: float = 1.2
@@ -98,18 +93,13 @@ class SellRequest(BaseModel):
     days: int = 7
     weather_input: dict = {"temperature": 25.0, "humidity": 60.0, "rainfall": 100.0}
 
-
 class FirebaseTokenRequest(BaseModel):
     id_token: str = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2ODg4In0.eyJpc3MiOiJodHRwczovL2ZpcmViYXNlYXBwLmNvbS8iLCJhdWQiOiJteWFwcCIsInN1YiI6InVzZXIxMjMifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
 
-# ================================
 # BASE DIRECTORY SETUP
-# ================================
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-# ================================
 # MODEL 1 - CROP YIELD MODEL
-# ================================
 MODEL_1_PATH = os.path.join(
     BASE_DIR,
     "models",
@@ -117,8 +107,6 @@ MODEL_1_PATH = os.path.join(
 )
 
 sys.path.append(MODEL_1_PATH)
-
-
 
 CROP_MODEL_PATH = os.path.join(
     MODEL_1_PATH,
@@ -128,9 +116,7 @@ CROP_MODEL_PATH = os.path.join(
 
 crop_model = joblib.load(CROP_MODEL_PATH)
 
-# ================================
 # MODEL 2 - AGRO IMPACT MODEL
-# ================================
 MODEL_2_PATH = os.path.join(
     BASE_DIR,
     "models",
@@ -139,9 +125,7 @@ MODEL_2_PATH = os.path.join(
 
 sys.path.append(MODEL_2_PATH)
 
-# ================================
 # MODEL 5 - CROP RISK MODEL
-# ================================
 RISK_MODEL_PATH = os.path.join(
     BASE_DIR,
     "models",
@@ -152,9 +136,7 @@ RISK_MODEL_PATH = os.path.join(
 
 risk_model = joblib.load(RISK_MODEL_PATH)
 
-# ================================
 # MODEL 6 - LIVESTOCK HEALTH MODEL
-# ================================
 LIVESTOCK_MODEL_PATH = os.path.join(
     BASE_DIR,
     "models",
@@ -174,10 +156,7 @@ LIVESTOCK_ENCODER_PATH = os.path.join(
 livestock_model = joblib.load(LIVESTOCK_MODEL_PATH)
 livestock_label_encoder = joblib.load(LIVESTOCK_ENCODER_PATH)
 
-# ================================
 # FASTAPI INIT
-# ================================
-
 from fastapi import WebSocket, WebSocketDisconnect
 import asyncio
 import random
@@ -187,9 +166,7 @@ app = FastAPI(
     version="1.0"
 )
 
-# ================================
 # REAL-TIME MARKET PRICE WEBSOCKET
-# ================================
 market_ws_clients = set()
 
 @app.websocket("/ws/market")
@@ -198,12 +175,10 @@ async def market_price_ws(websocket: WebSocket):
     market_ws_clients.add(websocket)
     try:
         while True:
-            # Keep connection alive; optionally receive pings
             await websocket.receive_text()
     except WebSocketDisconnect:
         market_ws_clients.remove(websocket)
 
-# Helper to broadcast price updates to all connected clients
 async def broadcast_market_price(price_data: dict):
     to_remove = set()
     for ws in market_ws_clients:
@@ -220,7 +195,6 @@ async def start_price_update_task():
     async def price_update_loop():
         while True:
             try:
-                # Example: fetch latest wheat price from Delhi mandi
                 df = fetch_agmarknet_data(commodity="Wheat", market="Delhi", state="Delhi")
                 if not df.empty:
                     latest = df.sort_values("Price_Date").iloc[-1]
@@ -329,7 +303,6 @@ def predict_crop_yield(data: CropRequest):
 def agro_impact_endpoint(data: AgroImpactRequest):
     return predict_agro_impact(data.dict())
 
-
 @app.post("/agro-impact-lite")
 def agro_impact_lite_endpoint(data: AgroImpactLiteRequest):
 
@@ -342,7 +315,6 @@ def agro_impact_lite_endpoint(data: AgroImpactLiteRequest):
     )
 
     return predict_agro_impact(features)
-
 
 # Crop Risk
 @app.post("/predict-risk")
@@ -357,7 +329,6 @@ def predict_risk(data: RiskInput):
     return {
         "risk_level": prediction[0]
     }
-
 
 # Livestock Health
 @app.post("/predict-livestock")
@@ -399,7 +370,7 @@ def price_endpoint(data: PriceRequest):
         days=data.days
     )
 
-# New endpoint: Live market price from Agmarknet
+# Live market price from Agmarknet
 from fastapi import Query
 @app.get("/market-live")
 def market_live(
