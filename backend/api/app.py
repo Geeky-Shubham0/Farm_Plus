@@ -79,6 +79,13 @@ class LivestockInput(BaseModel):
     resting: float = 6.0
     temperature: float = 25.0
 
+class FPQIRequest(BaseModel):
+    moisture_score: float
+    soil_score: float
+    heat_index: float
+    freshness_score: float
+    storage_risk_score: float
+
 class PriceRequest(BaseModel):
     crop: str = "Wheat"
     mandi: str | None = "Jhansi"
@@ -155,6 +162,20 @@ LIVESTOCK_ENCODER_PATH = os.path.join(
 
 livestock_model = joblib.load(LIVESTOCK_MODEL_PATH)
 livestock_label_encoder = joblib.load(LIVESTOCK_ENCODER_PATH)
+# MODEL 7 - FPQI SCORING MODEL
+
+FPQI_MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "model_7_fpqi_scoring",
+    "models",
+    "fpqi_trained_model.pkl"
+)
+
+from backend.models.model_7_fpqi_scoring.models.fpqi_model import FPQIModel
+
+fpqi_model = FPQIModel()
+fpqi_model.load_model(FPQI_MODEL_PATH)
 
 # FASTAPI INIT
 from fastapi import WebSocket, WebSocketDisconnect
@@ -511,3 +532,17 @@ def get_feature_metrics(
     if not records:
         return FeatureMetrics(moisture_stability_score=0, soil_health_score=0, heat_stress_index=0, storage_risk_score=0)
     return compute_feature_metrics(records)
+
+# MODEL 7 - FPQI ENDPOINT
+@app.post("/calculate-fpqi")
+def calculate_fpqi(data: FPQIRequest):
+
+    features = data.dict()
+
+    fpqi_value = fpqi_model.predict(features)
+    grade = fpqi_model.classify_grade(fpqi_value)
+
+    return {
+        "fpqi": round(fpqi_value, 2),
+        "grade": grade
+    }
