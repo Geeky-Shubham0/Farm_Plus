@@ -13,6 +13,7 @@ import Login from './components/login';
 import Signup from './components/signup';
 import Dashboard from './components/Dashboard';
 import LivestockCare from './pages/livestock';
+import AIModelPages from './pages/AIModelPage';
 
 const Home = () => (
   <>
@@ -40,6 +41,7 @@ function App() {
         <Route path="/signup"             element={<Signup />} />
         <Route path="/smart-advisory"     element={<Dashboard />} />
         <Route path="/livestock-care"     element={<LivestockCare />} />
+        <Route path="/ai-models"       element={<AIModelPages />} />
       </Routes>
     </div>
   );

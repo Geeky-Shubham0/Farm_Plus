@@ -13,7 +13,6 @@ model.train(dataset_path)
 # Save trained model to correct directory
 import os
 os.makedirs("models", exist_ok=True)
-
 model_path = "models/fpqi_trained_model.pkl"
 model.save_model(model_path)
 

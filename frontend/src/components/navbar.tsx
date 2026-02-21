@@ -20,6 +20,7 @@ const Navbar = () => {
         <li><NavLink to="/livestock-care">Livestock Care</NavLink></li>
         <li><NavLink to="/government-schemes">Government Schemes</NavLink></li>
         <li><NavLink to="/knowledge-hub">Knowledge Hub</NavLink></li>
+        <li><NavLink to="/ai-models">AI Models</NavLink></li>
       </ul>
 
       {/* RIGHT SIDE */}

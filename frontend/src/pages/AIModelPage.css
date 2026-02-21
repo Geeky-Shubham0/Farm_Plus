@@ -1,0 +1,296 @@
+.dash-page {
+  font-family: 'Open Sans', sans-serif;
+  min-height: 100vh;
+  background: #e8f5e8;
+}
+
+.dashboard-main {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+/* Card */
+.card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(45, 106, 45, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(45, 106, 45, 0.18);
+}
+
+.card-header {
+  background: linear-gradient(135deg, #2d6a2d, #4caf50);
+  padding: 1.2rem 1.5rem;
+}
+
+.card-title {
+  font-family: 'Merriweather', serif;
+  color: #fff;
+  font-size: 1rem;
+  margin: 0;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* Hero banner for AI Dashboard */
+.ai-hero {
+  background: linear-gradient(135deg, #1a3d1a 0%, #2d6a2d 50%, #4caf50 100%);
+  padding: 2rem 4rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-hero::before {
+  content: '🤖';
+  position: absolute;
+  right: 4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 6rem;
+  opacity: 0.15;
+}
+
+.ai-hero h1 {
+  font-family: 'Merriweather', serif;
+  color: #fff;
+  font-size: 2rem;
+  margin-bottom: 0.4rem;
+}
+
+.ai-hero p {
+  color: #d4edda;
+  font-size: 0.95rem;
+}
+
+.ai-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.85rem;
+}
+
+.ai-bc-link {
+  color: #d4edda;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.ai-bc-link:hover { color: #fff; }
+.ai-bc-sep { color: #aaa; }
+.ai-bc-current { color: #fff; font-weight: 600; }
+
+@media (max-width: 900px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-main {
+    padding: 1rem;
+  }
+
+  .ai-hero {
+    padding: 1.5rem 1.5rem;
+  }
+
+  .ai-hero h1 {
+    font-size: 1.5rem;
+  }
+}
+
+/* ── Model Inner ── */
+.model-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.model-desc {
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Factor bars */
+.factor-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.factor-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+}
+
+.factor-label { width: 130px; color: #444; flex-shrink: 0; }
+
+.factor-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: #e0f0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.factor-bar {
+  height: 100%;
+  background: linear-gradient(to right, #2d6a2d, #4caf50);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.factor-val { width: 36px; color: #2d6a2d; font-weight: 700; font-size: 0.78rem; }
+
+/* Buttons */
+.model-btn {
+  padding: 0.65rem 1.4rem;
+  background: #2d6a2d;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: 'Open Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-self: flex-start;
+}
+.model-btn:hover:not(:disabled) { background: #1e4e1e; }
+.model-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Score result */
+.score-result {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: #f0faf0;
+  border: 1px solid #c8e6c8;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+}
+
+.score-label { font-size: 0.82rem; color: #555; }
+.score-value { font-family: 'Merriweather', serif; font-size: 1.4rem; color: #1a3d1a; font-weight: 700; }
+
+.score-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+}
+.score-badge.excellent { background: #e0f5e0; color: #1a6e1a; }
+.score-badge.good      { background: #fff8e0; color: #7a5800; }
+.score-badge.average   { background: #ffeaea; color: #8a0000; }
+
+/* FPO list */
+.fpo-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.fpo-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fdf8;
+  border: 1px solid #d8eed8;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+}
+
+.fpo-info { display: flex; flex-direction: column; gap: 0.15rem; }
+.fpo-name { font-size: 0.85rem; font-weight: 700; color: #1a3d1a; }
+.fpo-meta { font-size: 0.72rem; color: #777; }
+
+.fpo-match { display: flex; flex-direction: column; align-items: center; }
+.match-val { font-size: 1rem; font-weight: 700; color: #2d6a2d; }
+.match-label { font-size: 0.68rem; color: #888; }
+
+/* Buyer list */
+.buyer-list { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.4rem; }
+
+.buyer-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fdf8;
+  border: 1px solid #d8eed8;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  gap: 0.5rem;
+}
+
+.buyer-info { display: flex; flex-direction: column; flex: 1; }
+.buyer-name { font-size: 0.85rem; font-weight: 700; color: #1a3d1a; }
+.buyer-meta { font-size: 0.72rem; color: #777; }
+
+.buyer-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.buyer-price { font-size: 0.82rem; font-weight: 700; color: #2d6a2d; }
+.buyer-rating { font-size: 0.75rem; color: #888; }
+
+.connect-btn {
+  padding: 0.3rem 0.7rem;
+  background: #2d6a2d;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: 'Open Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.connect-btn:hover { background: #1e4e1e; }
+
+/* Hero */
+.ai-hero {
+  background: linear-gradient(135deg, #1a3d1a 0%, #2d6a2d 60%, #4caf50 100%);
+  padding: 2.5rem 4rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-hero::after {
+  content: '🤖';
+  position: absolute;
+  right: 4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 6rem;
+  opacity: 0.12;
+}
+
+.ai-breadcrumb-text {
+  color: #a8d5a8;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.ai-hero h1 {
+  font-family: 'Merriweather', serif;
+  color: #fff;
+  font-size: 2rem;
+  margin-bottom: 0.4rem;
+}
+
+.ai-hero p {
+  color: #d4edda;
+  font-size: 0.95rem;
+}
