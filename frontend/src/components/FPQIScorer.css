@@ -1,0 +1,45 @@
+.fpqi-scorer-container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 2rem;
+  max-width: 420px;
+  margin: 2rem auto;
+}
+.fpqi-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.fpqi-input-group label {
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+.fpqi-input-group input {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+.fpqi-result {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+.fpqi-grade {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+.fpqi-grade-premium {
+  background: #4caf50;
+  color: #fff;
+}
+.fpqi-grade-processing {
+  background: #ff9800;
+  color: #fff;
+}
+.fpqi-grade-secondary {
+  background: #f44336;
+  color: #fff;
+}

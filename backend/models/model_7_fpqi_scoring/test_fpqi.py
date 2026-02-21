@@ -1,7 +1,7 @@
 from models.fpqi_model import FPQIModel
 
 # Correct dataset path (relative to this folder)
-dataset_path = "data/fpqi_dataset.csv"
+dataset_path = "backend/models/model_7_fpqi_scoring/data/fpqi_dataset.csv"
 
 # Initialize model
 model = FPQIModel()
@@ -9,7 +9,10 @@ model = FPQIModel()
 # Train model
 model.train(dataset_path)
 
-# Save trained model
+
+# Save trained model to correct directory
+import os
+os.makedirs("models", exist_ok=True)
 model_path = "models/fpqi_trained_model.pkl"
 model.save_model(model_path)
 

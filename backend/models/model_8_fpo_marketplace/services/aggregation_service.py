@@ -1,7 +1,11 @@
 import json
 import os
+import sys
 from typing import List
-from ..schemas.marketplace_schemas import FarmerLot, FPOAggregateLot
+
+# Add parent directory to sys.path for absolute import
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from schemas.marketplace_schemas import FarmerLot, FPOAggregateLot
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))

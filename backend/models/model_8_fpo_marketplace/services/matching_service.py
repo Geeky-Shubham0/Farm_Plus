@@ -1,6 +1,9 @@
 import json
 import os
-from ..schemas.marketplace_schemas import CompanyRequirement, MatchResult
+import sys
+# Add parent directory to sys.path for absolute import
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from schemas.marketplace_schemas import CompanyRequirement, MatchResult
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
