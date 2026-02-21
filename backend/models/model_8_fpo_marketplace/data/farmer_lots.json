@@ -1,0 +1,34 @@
+[
+    {
+        "farmer_id": "F001",
+        "lot_id": "L001",
+        "crop": "Wheat",
+        "quantity_kg": 1000,
+        "fpqi": 82,
+        "grade": "Premium"
+    },
+    {
+        "farmer_id": "F002",
+        "lot_id": "L002",
+        "crop": "Wheat",
+        "quantity_kg": 900,
+        "fpqi": 85,
+        "grade": "Premium"
+    },
+    {
+        "farmer_id": "F003",
+        "lot_id": "L003",
+        "crop": "Wheat",
+        "quantity_kg": 1100,
+        "fpqi": 78,
+        "grade": "Processing"
+    },
+    {
+        "farmer_id": "FARMER_01",
+        "lot_id": "LOT001",
+        "crop": "Wheat",
+        "quantity_kg": 120.0,
+        "fpqi": 88.5,
+        "grade": "Premium"
+    }
+]

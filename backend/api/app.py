@@ -19,6 +19,16 @@ from backend.models.model_2_agro_impact.src.feature_builder import build_feature
 from backend.models.model_3_market_price.src.price_intelligence import get_price_intelligence
 from backend.models.model_4_sell_recommedation.src.recommendation import get_sell_recommendation
 from backend.api.firebase_auth import is_firebase_configured, verify_firebase_id_token
+from backend.models.model_8_fpo_marketplace.models.marketplace_engine import MarketplaceEngine
+from backend.models.model_8_fpo_marketplace.schemas.marketplace_schemas import (
+    FarmerLot,
+    CompanyRequirement
+)
+from backend.models.model_9_dynamic_pricing.models.pricing_engine import PricingEngine
+from backend.models.model_9_dynamic_pricing.schemas.pricing_schemas import (
+    PricingRequest,
+    PricingResponse
+)
 class CropRequest(BaseModel):
     Crop: str = "Wheat"
     Season: str = "Rabi"
@@ -78,6 +88,13 @@ class LivestockInput(BaseModel):
     feeding: int = 3
     resting: float = 6.0
     temperature: float = 25.0
+
+class FPQIRequest(BaseModel):
+    moisture_score: float
+    soil_score: float
+    heat_index: float
+    freshness_score: float
+    storage_risk_score: float
 
 class PriceRequest(BaseModel):
     crop: str = "Wheat"
@@ -155,6 +172,20 @@ LIVESTOCK_ENCODER_PATH = os.path.join(
 
 livestock_model = joblib.load(LIVESTOCK_MODEL_PATH)
 livestock_label_encoder = joblib.load(LIVESTOCK_ENCODER_PATH)
+# MODEL 7 - FPQI SCORING MODEL
+
+FPQI_MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "model_7_fpqi_scoring",
+    "models",
+    "fpqi_trained_model.pkl"
+)
+
+from backend.models.model_7_fpqi_scoring.models.fpqi_model import FPQIModel
+
+fpqi_model = FPQIModel()
+fpqi_model.load_model(FPQI_MODEL_PATH)
 
 # FASTAPI INIT
 from fastapi import WebSocket, WebSocketDisconnect
@@ -165,6 +196,10 @@ app = FastAPI(
     title="Farm+ AI API",
     version="1.0"
 )
+# MODEL 8 - FPO MARKETPLACE ENGINE
+marketplace_engine = MarketplaceEngine()
+
+pricing_engine = PricingEngine()
 
 # REAL-TIME MARKET PRICE WEBSOCKET
 market_ws_clients = set()
@@ -511,3 +546,52 @@ def get_feature_metrics(
     if not records:
         return FeatureMetrics(moisture_stability_score=0, soil_health_score=0, heat_stress_index=0, storage_risk_score=0)
     return compute_feature_metrics(records)
+
+# MODEL 7 - FPQI ENDPOINT
+@app.post("/calculate-fpqi")
+def calculate_fpqi(data: FPQIRequest):
+
+    features = data.dict()
+
+    fpqi_value = fpqi_model.predict(features)
+    grade = fpqi_model.classify_grade(fpqi_value)
+
+    return {
+        "fpqi": round(fpqi_value, 2),
+        "grade": grade
+    }
+# MODEL 8 - FPO MARKETPLACE ENDPOINTS
+
+@app.post("/submit-lot")
+def submit_lot(lot: FarmerLot):
+    return marketplace_engine.submit_lot(lot)
+
+
+@app.post("/aggregate-fpo")
+def aggregate_fpo(fpo_id: str, crop: str, grade: str):
+    result = marketplace_engine.aggregate(fpo_id, crop, grade)
+    if not result:
+        raise HTTPException(status_code=404, detail="No matching lots found")
+    return result
+
+
+@app.post("/match-company")
+def match_company(req: CompanyRequirement):
+    results = marketplace_engine.match(req)
+    if not results:
+        return {"message": "No matching lots available"}
+    return results
+
+# MODEL 9 - DYNAMIC PRICING
+
+@app.post("/calculate-price", response_model=PricingResponse)
+def calculate_price(data: PricingRequest):
+
+    result = pricing_engine.calculate_price(
+        fpqi=data.fpqi,
+        base_market_price=data.base_market_price,
+        farmer_trust_score=data.farmer_trust_score,
+        distance_km=data.distance_km
+    )
+
+    return result
